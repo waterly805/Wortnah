@@ -1,0 +1,19 @@
+{
+  "name": "Wortnah — Sagen, was wichtig ist.",
+  "short_name": "Wortnah",
+  "description": "Barrierearme Kommunikation und unterstütztes Sprechtraining.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#0b3b67",
+  "lang": "de-DE",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
