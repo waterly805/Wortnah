@@ -33,6 +33,11 @@ import {
   Wrench,
 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import {
+  DEFAULT_ADMIN_CHOICE_MAXIMUM,
+  availablePatientChoiceCounts,
+  normalizePatientChoiceCount,
+} from "@/lib/choice-policy";
 import { supabase } from "@/lib/supabase";
 
 type Lang = "de" | "en";
@@ -355,7 +360,9 @@ export function WortnahApp() {
   const [pinMode, setPinMode] = useState<"create" | "unlock">("unlock");
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [online, setOnline] = useState(() => typeof navigator === "undefined" ? true : navigator.onLine);
-  const [choiceCount, setChoiceCount] = useState(8);
+  const adminChoiceMaximum = DEFAULT_ADMIN_CHOICE_MAXIMUM;
+  const allowedChoiceCounts = availablePatientChoiceCounts(adminChoiceMaximum);
+  const [choiceCount, setChoiceCount] = useState(() => normalizePatientChoiceCount(8, adminChoiceMaximum));
   const [textScale, setTextScale] = useState(1);
   const [speechRate, setSpeechRate] = useState(0.82);
   const [voicePreference, setVoicePreference] = useState<VoicePreference>("auto");
@@ -476,7 +483,7 @@ export function WortnahApp() {
         if (!data) return;
         setAudioEnabled(data.speech_enabled);
         setSpeechRate(Number(data.speech_rate));
-        setChoiceCount(data.choice_count);
+        setChoiceCount(normalizePatientChoiceCount(data.choice_count, adminChoiceMaximum));
         setTextScale(Number(data.text_scale) / 1.3);
         if (data.voice_name === "wortnah:female") setVoicePreference("female");
         else if (data.voice_name === "wortnah:male") setVoicePreference("male");
@@ -831,7 +838,7 @@ export function WortnahApp() {
           <button className="setting-row" onClick={() => setLang((value) => value === "de" ? "en" : "de")}><span><strong>{lang === "de" ? "Deutsch" : "English"}</strong><small>{lang === "de" ? "Sprache der ganzen App" : "Language for the whole app"}</small></span><Languages /></button>
         </div>
         <div className="settings-section"><h2><Settings2 />{t.appearance}</h2>
-          <div className="setting-block"><strong>{t.choices}</strong><small>{lang === "de" ? "Mein Bereich kann diese Einstellung jederzeit selbst ändern." : "My Space can change this setting at any time."}</small><div className="option-row">{[2,4,6,8].map((count) => <button key={count} className={choiceCount === count ? "active" : ""} onClick={() => { setChoiceCount(count); savePreference({ choice_count: count }); }}>{count}</button>)}</div><div className={`choice-preview preview-${choiceCount}`}>{previewLabels.slice(0, choiceCount).map((label) => <span key={label}>{label}</span>)}</div></div>
+          <div className="setting-block"><strong>{t.choices}</strong><small>{lang === "de" ? `Mein Bereich kann bis zum festgelegten Maximum von ${adminChoiceMaximum} wählen.` : `My Space can choose up to the configured maximum of ${adminChoiceMaximum}.`}</small><div className="option-row">{allowedChoiceCounts.map((count) => <button key={count} className={choiceCount === count ? "active" : ""} onClick={() => { setChoiceCount(count); savePreference({ choice_count: count }); }}>{count}</button>)}</div><div className={`choice-preview preview-${choiceCount}`}>{previewLabels.slice(0, choiceCount).map((label) => <span key={label}>{label}</span>)}</div></div>
           <div className="setting-block"><strong>{t.textSize}</strong><div className="option-row">{[[1,t.standard],[1.12,t.large],[1.24,t.larger]].map(([scale,label]) => <button key={String(scale)} className={textScale === scale ? "active" : ""} onClick={() => { setTextScale(scale as number); savePreference({ text_scale: Number(scale) * 1.3 }); }}>{label}</button>)}</div></div>
         </div>
         <div className="settings-section"><h2><LockKeyhole />{t.account}</h2><button className="setting-row destructive-row" onClick={signOut}><span><strong>{t.signOut}</strong><small>{lang === "de" ? "Dieses Gerät sicher trennen" : "Disconnect this device securely"}</small></span><LogOut /></button></div>
