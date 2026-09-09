@@ -1,0 +1,1626 @@
+{
+  "version": 1,
+  "generatedAt": "2026-09-06T19:15:37.860Z",
+  "assets": [
+    {
+      "relativePath": "s01/s01-001-ja.mp3",
+      "filename": "s01-001-ja.mp3",
+      "section": "s01",
+      "byteSize": 10911,
+      "sha256": "6a246f0a2008a37d48d494ae43d666799b812c4a62636a9498d1b84a373c86f9",
+      "textDe": "Ja",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-002-nein.mp3",
+      "filename": "s01-002-nein.mp3",
+      "section": "s01",
+      "byteSize": 10911,
+      "sha256": "082ce921b4817a1652ece4599b996efc984f8f0535790448dadec06eebff743b",
+      "textDe": "Nein",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-003-vielleicht.mp3",
+      "filename": "s01-003-vielleicht.mp3",
+      "section": "s01",
+      "byteSize": 13836,
+      "sha256": "4e72f0fdd72d7f77d1f76ec1722216e945786b63f0bcad909e1535f0a0c50344",
+      "textDe": "Vielleicht",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-004-ich-weiss-es-nicht.mp3",
+      "filename": "s01-004-ich-weiss-es-nicht.mp3",
+      "section": "s01",
+      "byteSize": 17598,
+      "sha256": "2843f8a1493fcd4dd19291244e093052a7e7b0ab0c87df58a44ac6fdef053269",
+      "textDe": "Ich weiß es nicht.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-005-ich-bin-mir-nicht-sicher.mp3",
+      "filename": "s01-005-ich-bin-mir-nicht-sicher.mp3",
+      "section": "s01",
+      "byteSize": 21777,
+      "sha256": "7a652c3b0b9f9f65ba748d045c93454ae0df33435804ae6bcd1a1c29e04a582e",
+      "textDe": "Ich bin mir nicht sicher.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-006-ich-habe-das-verstanden.mp3",
+      "filename": "s01-006-ich-habe-das-verstanden.mp3",
+      "section": "s01",
+      "byteSize": 21777,
+      "sha256": "714d83f2e4cd6006dff10fa229d2390830cfe2294609fdee29568998c05e9abd",
+      "textDe": "Ich habe das verstanden.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-007-ich-habe-das-noch-nicht-verstanden.mp3",
+      "filename": "s01-007-ich-habe-das-noch-nicht-verstanden.mp3",
+      "section": "s01",
+      "byteSize": 28465,
+      "sha256": "d5a7975a741d96cd819c462392392fecdd86519ba742dd89b2e1827d8cc8865b",
+      "textDe": "Ich habe das noch nicht verstanden.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-008-bitte-sagen-sie-das-noch-einmal.mp3",
+      "filename": "s01-008-bitte-sagen-sie-das-noch-einmal.mp3",
+      "section": "s01",
+      "byteSize": 29301,
+      "sha256": "45bbbde917dcad939cca432cbe409392b81850db0e0ecea1ea5dd9ec89781a12",
+      "textDe": "Bitte sagen Sie das noch einmal.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-009-bitte-sprechen-sie-langsamer.mp3",
+      "filename": "s01-009-bitte-sprechen-sie-langsamer.mp3",
+      "section": "s01",
+      "byteSize": 25539,
+      "sha256": "f0cac7eb8c35a87b15af81a3b18309d2fd3a34ee4274b3066fa840463fec6453",
+      "textDe": "Bitte sprechen Sie langsamer.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-010-bitte-erklaeren-sie-es-einfacher.mp3",
+      "filename": "s01-010-bitte-erklaeren-sie-es-einfacher.mp3",
+      "section": "s01",
+      "byteSize": 27629,
+      "sha256": "c5c14872f258941c6a8212cd4120f20079d7f58cfe0ffaf1febb977aae99a308",
+      "textDe": "Bitte erklären Sie es einfacher.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-011-bitte-geben-sie-mir-mehr-zeit.mp3",
+      "filename": "s01-011-bitte-geben-sie-mir-mehr-zeit.mp3",
+      "section": "s01",
+      "byteSize": 25539,
+      "sha256": "a40768977991582edf9656dd16d38239275545d36e97b4449550a8cd5114ad0b",
+      "textDe": "Bitte geben Sie mir mehr Zeit.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-012-bitte-warten-sie-einen-moment.mp3",
+      "filename": "s01-012-bitte-warten-sie-einen-moment.mp3",
+      "section": "s01",
+      "byteSize": 26375,
+      "sha256": "527eb13b4bf1dfa1974145b494290cd5ea28580da67e14b878039e4ca3c26f4a",
+      "textDe": "Bitte warten Sie einen Moment.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-013-ich-brauche-eine-kurze-pause.mp3",
+      "filename": "s01-013-ich-brauche-eine-kurze-pause.mp3",
+      "section": "s01",
+      "byteSize": 26375,
+      "sha256": "d31d6a65248bed1e8697ebee89e58e2641d94e9cf4367596a4623b9f0167ba0d",
+      "textDe": "Ich brauche eine kurze Pause.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-014-ich-moechte-jetzt-weitermachen.mp3",
+      "filename": "s01-014-ich-moechte-jetzt-weitermachen.mp3",
+      "section": "s01",
+      "byteSize": 25539,
+      "sha256": "1999c2bc048db06c63d0be61f534387ba6a6bae690cd62cd7817f8f49a1ef517",
+      "textDe": "Ich möchte jetzt weitermachen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-015-ich-moechte-spaeter-antworten.mp3",
+      "filename": "s01-015-ich-moechte-spaeter-antworten.mp3",
+      "section": "s01",
+      "byteSize": 25539,
+      "sha256": "893fd86e83d4a1e79a125320aeb329cea9989939772be8152b5527912c8a6fc6",
+      "textDe": "Ich möchte später antworten.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-016-ich-moechte-meine-antwort-aendern.mp3",
+      "filename": "s01-016-ich-moechte-meine-antwort-aendern.mp3",
+      "section": "s01",
+      "byteSize": 27211,
+      "sha256": "48f3006dfd86b1852de1031a6f2442aca0923cbb4955e70b18e069d4a7f69795",
+      "textDe": "Ich möchte meine Antwort ändern.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-017-bitte-fragen-sie-mich-direkt.mp3",
+      "filename": "s01-017-bitte-fragen-sie-mich-direkt.mp3",
+      "section": "s01",
+      "byteSize": 24703,
+      "sha256": "40ca7622cc4f999b2d03ec044c226db573ee74839251956f4d51487255c69576",
+      "textDe": "Bitte fragen Sie mich direkt.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-018-bitte-stellen-sie-nur-eine-frage-auf-einmal.mp3",
+      "filename": "s01-018-bitte-stellen-sie-nur-eine-frage-auf-einmal.mp3",
+      "section": "s01",
+      "byteSize": 37660,
+      "sha256": "f6d1f58fa2dc359f76b7d5404555c31c8554c66763564414569a7d970a2594d6",
+      "textDe": "Bitte stellen Sie nur eine Frage auf einmal.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-019-bitte-zeigen-sie-mir-was-sie-meinen.mp3",
+      "filename": "s01-019-bitte-zeigen-sie-mir-was-sie-meinen.mp3",
+      "section": "s01",
+      "byteSize": 31391,
+      "sha256": "f7a79c27961866635511171c1e1022c9f64586bbeed390c916b77012fcb01c26",
+      "textDe": "Bitte zeigen Sie mir, was Sie meinen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-020-ich-brauche-hilfe-beim-ausdruecken.mp3",
+      "filename": "s01-020-ich-brauche-hilfe-beim-ausdruecken.mp3",
+      "section": "s01",
+      "byteSize": 40586,
+      "sha256": "8ee6ccc4cfd0b6c8d76a6643d768e2dfce67a2048532c32f1f8cc463e0940c72",
+      "textDe": "Ich brauche Hilfe beim Ausdrücken.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-021-ich-moechte-bitte-ein-glas-wasser.mp3",
+      "filename": "s01-021-ich-moechte-bitte-ein-glas-wasser.mp3",
+      "section": "s01",
+      "byteSize": 27629,
+      "sha256": "fb2cc9cc9afc6fbd49adf94aedacbfab6dcd0352111695240b07cf7a71104db6",
+      "textDe": "Ich möchte bitte ein Glas Wasser.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-022-ich-habe-durst.mp3",
+      "filename": "s01-022-ich-habe-durst.mp3",
+      "section": "s01",
+      "byteSize": 17598,
+      "sha256": "dfe045a12a78644cce1d79cb2acf5995604961750384ab325dfcab8de3c8834c",
+      "textDe": "Ich habe Durst.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-023-ich-moechte-jetzt-etwas-trinken.mp3",
+      "filename": "s01-023-ich-moechte-jetzt-etwas-trinken.mp3",
+      "section": "s01",
+      "byteSize": 28465,
+      "sha256": "c34b7b3af65c1c18fd67a5d3339aa9c420b5b443088cda66a53056c35a26e0fa",
+      "textDe": "Ich möchte jetzt etwas trinken.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-024-ich-habe-hunger.mp3",
+      "filename": "s01-024-ich-habe-hunger.mp3",
+      "section": "s01",
+      "byteSize": 16762,
+      "sha256": "931e407a7473bcc136995db18d46d367c56d577564785ddffb8a27c01ed76b3c",
+      "textDe": "Ich habe Hunger.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-025-ich-moechte-jetzt-etwas-essen.mp3",
+      "filename": "s01-025-ich-moechte-jetzt-etwas-essen.mp3",
+      "section": "s01",
+      "byteSize": 24703,
+      "sha256": "7343b6325b1a65f781fc4200c43aa0d164fbcd32da1d6ba305f8a136119e848c",
+      "textDe": "Ich möchte jetzt etwas essen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-026-ich-moechte-bitte-zur-toilette.mp3",
+      "filename": "s01-026-ich-moechte-bitte-zur-toilette.mp3",
+      "section": "s01",
+      "byteSize": 27629,
+      "sha256": "6db40e68f80a9b828c6473921f4787eda089fb9198d317b422c90b7a683b7dc5",
+      "textDe": "Ich möchte bitte zur Toilette.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-027-bitte-helfen-sie-mir-beim-aufstehen.mp3",
+      "filename": "s01-027-bitte-helfen-sie-mir-beim-aufstehen.mp3",
+      "section": "s01",
+      "byteSize": 30973,
+      "sha256": "f9c16067bde6793af7015d2f67d2afac4caafe2bd05e7fc0c23d39d7454fc5dc",
+      "textDe": "Bitte helfen Sie mir beim Aufstehen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-028-ich-moechte-mich-bitte-hinlegen.mp3",
+      "filename": "s01-028-ich-moechte-mich-bitte-hinlegen.mp3",
+      "section": "s01",
+      "byteSize": 28465,
+      "sha256": "721906cd0bca52e55c7fd7037da59a7325550b0c6e2de86e8f2ab6bcca86e9aa",
+      "textDe": "Ich möchte mich bitte hinlegen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-029-ich-moechte-bitte-etwas-ruhe.mp3",
+      "filename": "s01-029-ich-moechte-bitte-etwas-ruhe.mp3",
+      "section": "s01",
+      "byteSize": 25539,
+      "sha256": "0e9a019e199dc6e185cc8335a05193ec9d24380f36b1e6b132e12195fb561498",
+      "textDe": "Ich möchte bitte etwas Ruhe.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-030-bitte-helfen-sie-mir-wegen-meiner-schmerzen.mp3",
+      "filename": "s01-030-bitte-helfen-sie-mir-wegen-meiner-schmerzen.mp3",
+      "section": "s01",
+      "byteSize": 35988,
+      "sha256": "9ae786ae73ee393c9564d295495cb1a990c59e61934712102338163834093748",
+      "textDe": "Bitte helfen Sie mir wegen meiner Schmerzen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-031-ich-habe-kopfschmerzen.mp3",
+      "filename": "s01-031-ich-habe-kopfschmerzen.mp3",
+      "section": "s01",
+      "byteSize": 22613,
+      "sha256": "51e452ed738d6c1948427248010c6e17add51fc4b6633cc78f42782fdeef2506",
+      "textDe": "Ich habe Kopfschmerzen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-032-mir-ist-schwindelig.mp3",
+      "filename": "s01-032-mir-ist-schwindelig.mp3",
+      "section": "s01",
+      "byteSize": 19688,
+      "sha256": "f5724dd16f6aa5c8c15d8390ce71b58edb6af7cad99b28e371b71193ca4f5ec4",
+      "textDe": "Mir ist schwindelig.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-033-mir-ist-zu-kalt.mp3",
+      "filename": "s01-033-mir-ist-zu-kalt.mp3",
+      "section": "s01",
+      "byteSize": 18852,
+      "sha256": "1ba0e1010bb3233056d35c6905d33b809fb42cf216396f5bb164df00e3a73199",
+      "textDe": "Mir ist zu kalt.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-034-mir-ist-zu-warm.mp3",
+      "filename": "s01-034-mir-ist-zu-warm.mp3",
+      "section": "s01",
+      "byteSize": 19688,
+      "sha256": "c107de23172bfaed3a0ef8e29688e22326addbc8a8d72db22057ce54fbfd6c60",
+      "textDe": "Mir ist zu warm.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-035-bitte-holen-sie-sofort-hilfe.mp3",
+      "filename": "s01-035-bitte-holen-sie-sofort-hilfe.mp3",
+      "section": "s01",
+      "byteSize": 49363,
+      "sha256": "50554c9dde40aa2da2ab6285cd1917fa7671c7b5d91e5bb6d98e2993863a9894",
+      "textDe": "Bitte holen Sie sofort Hilfe.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s01/s01-036-bitte-bleiben-sie-ruhig-bei-mir.mp3",
+      "filename": "s01-036-bitte-bleiben-sie-ruhig-bei-mir.mp3",
+      "section": "s01",
+      "byteSize": 28465,
+      "sha256": "f5359ff55ca5db2d4f38a29e29bcd4fe683b2618b8b56a11bd4c0659d71a8e07",
+      "textDe": "Bitte bleiben Sie ruhig bei mir.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-001-wasser-mit-kohlensaeure.mp3",
+      "filename": "s02-001-wasser-mit-kohlensaeure.mp3",
+      "section": "s02",
+      "byteSize": 35988,
+      "sha256": "9de0dfe4d2157bb7f5c3f6a2efbd95068655c8938916264f123dd6f788018aed",
+      "textDe": "Ich möchte Wasser mit Kohlensäure.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-002-tasse-kaffee.mp3",
+      "filename": "s02-002-tasse-kaffee.mp3",
+      "section": "s02",
+      "byteSize": 31391,
+      "sha256": "50542527f4b2a339a8f1e917d37aef1150685ad435f0e2a5975f924dcbcc619e",
+      "textDe": "Ich möchte eine Tasse Kaffee.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-003-tasse-tee.mp3",
+      "filename": "s02-003-tasse-tee.mp3",
+      "section": "s02",
+      "byteSize": 28465,
+      "sha256": "87d4e2b1af01fae685097593f48ecfaa7558ee90fa13fafe6149e2fea1154e55",
+      "textDe": "Ich möchte eine Tasse Tee.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-004-glas-saft.mp3",
+      "filename": "s02-004-glas-saft.mp3",
+      "section": "s02",
+      "byteSize": 27211,
+      "sha256": "ff03efbbf4e9c717fb4c97d30305187fdd9a177198cd406e7a86aab91e1fa96e",
+      "textDe": "Ich möchte ein Glas Saft.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-005-etwas-warmes-trinken.mp3",
+      "filename": "s02-005-etwas-warmes-trinken.mp3",
+      "section": "s02",
+      "byteSize": 36824,
+      "sha256": "c7370daa452d2707ea4d1910f64b6226b1b825d47e44e58c57734f33e5547145",
+      "textDe": "Ich möchte etwas Warmes trinken.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-006-etwas-kaltes-trinken.mp3",
+      "filename": "s02-006-etwas-kaltes-trinken.mp3",
+      "section": "s02",
+      "byteSize": 34316,
+      "sha256": "0868405a0feff6ae991b0fd557d879c0ff13f67c9c4bce9248d5701ec143fab7",
+      "textDe": "Ich möchte etwas Kaltes trinken.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-007-getraenk-naeher-zu-mir.mp3",
+      "filename": "s02-007-getraenk-naeher-zu-mir.mp3",
+      "section": "s02",
+      "byteSize": 37660,
+      "sha256": "00a69e0bc5717007bbee3481aaa4dc5257575020d1d600cecfbc8e18e5550114",
+      "textDe": "Bitte stellen Sie das Getränk näher zu mir.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-008-flasche-oeffnen.mp3",
+      "filename": "s02-008-flasche-oeffnen.mp3",
+      "section": "s02",
+      "byteSize": 23449,
+      "sha256": "852031a4d13dca2c06d1533d2ed0c3ce01808d5cd0efb9a4976556edb46c2e95",
+      "textDe": "Bitte öffnen Sie die Flasche.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-009-trinkhalm.mp3",
+      "filename": "s02-009-trinkhalm.mp3",
+      "section": "s02",
+      "byteSize": 30137,
+      "sha256": "8d08937f01abf27da2a9b32a257cd4af634e871f0f4a56739911e71675b5f933",
+      "textDe": "Ich brauche einen Trinkhalm.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-010-fruehstuecken.mp3",
+      "filename": "s02-010-fruehstuecken.mp3",
+      "section": "s02",
+      "byteSize": 24703,
+      "sha256": "dd559ef54ce1769621bd93cc49817edbcccd098d7563ee255f20eb81070d917a",
+      "textDe": "Ich möchte frühstücken.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-011-zu-mittag-essen.mp3",
+      "filename": "s02-011-zu-mittag-essen.mp3",
+      "section": "s02",
+      "byteSize": 36824,
+      "sha256": "0b472c6d23447f24454bc95273e93f921a082257cbcdc05986243dfafa5a1151",
+      "textDe": "Ich möchte zu Mittag essen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-012-zu-abend-essen.mp3",
+      "filename": "s02-012-zu-abend-essen.mp3",
+      "section": "s02",
+      "byteSize": 29301,
+      "sha256": "cf4a9a2ab1f8c29560527b41051c96617cf89ab812df25065dbd6a7d91d7e742",
+      "textDe": "Ich möchte zu Abend essen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-013-kleine-mahlzeit.mp3",
+      "filename": "s02-013-kleine-mahlzeit.mp3",
+      "section": "s02",
+      "byteSize": 30973,
+      "sha256": "107c57826f322e8c1dfa5834609567552e66235f2b9b812f8a27a8a46df937e1",
+      "textDe": "Ich möchte eine kleine Mahlzeit.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-014-obst-essen.mp3",
+      "filename": "s02-014-obst-essen.mp3",
+      "section": "s02",
+      "byteSize": 24703,
+      "sha256": "8ddd2650a00c63e629e9069b302063b02f5839e310dbfd784527814a101c4433",
+      "textDe": "Ich möchte Obst essen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-015-belegtes-brot.mp3",
+      "filename": "s02-015-belegtes-brot.mp3",
+      "section": "s02",
+      "byteSize": 32226,
+      "sha256": "94825c16003c159b80e88a7cccaa796f20acee1c69f1eaa71e8240df40ac9eab",
+      "textDe": "Ich möchte ein belegtes Brot.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-016-essen-kleiner-schneiden.mp3",
+      "filename": "s02-016-essen-kleiner-schneiden.mp3",
+      "section": "s02",
+      "byteSize": 32226,
+      "sha256": "28d8c9cf400af5e4faac1d352a6c839519c2a9cf0a38a944c133a25655c99cd9",
+      "textDe": "Bitte schneiden Sie mein Essen kleiner.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-017-hilfe-beim-essen.mp3",
+      "filename": "s02-017-hilfe-beim-essen.mp3",
+      "section": "s02",
+      "byteSize": 27629,
+      "sha256": "88ef1b88df17a16e1b90e5dfc401554edf6e294accd39e240a7e72d55d95421a",
+      "textDe": "Bitte helfen Sie mir beim Essen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-018-was-zu-essen-gibt.mp3",
+      "filename": "s02-018-was-zu-essen-gibt.mp3",
+      "section": "s02",
+      "byteSize": 34316,
+      "sha256": "16a48e7336b6701af267c41f6913e84d8e18f16df5f9c600c9aaf5d6db3b63bd",
+      "textDe": "Bitte zeigen Sie mir, was es zu essen gibt.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-019-duschen.mp3",
+      "filename": "s02-019-duschen.mp3",
+      "section": "s02",
+      "byteSize": 23449,
+      "sha256": "97e52a2ea187dab299c3d81451e95a3153e309c6a9d65575e77c877d93fcece5",
+      "textDe": "Ich möchte duschen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-020-waschen.mp3",
+      "filename": "s02-020-waschen.mp3",
+      "section": "s02",
+      "byteSize": 23449,
+      "sha256": "a1aa828ae56f0b5b28adb906cf6de98ca71f5615724153e8c216b71496567ebd",
+      "textDe": "Ich möchte mich waschen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-021-zaehneputzen.mp3",
+      "filename": "s02-021-zaehneputzen.mp3",
+      "section": "s02",
+      "byteSize": 32226,
+      "sha256": "a5a43ead2f9169046b0dd9f3cd2288cef8a0ae0853b85a2df9e9e41ee1025442",
+      "textDe": "Ich möchte Zähne putzen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-022-haarewaschen.mp3",
+      "filename": "s02-022-haarewaschen.mp3",
+      "section": "s02",
+      "byteSize": 33898,
+      "sha256": "37fea0c88e3a40126a77c13fd86b74688896762a7b127202031910178e7e98e3",
+      "textDe": "Ich möchte Haare waschen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-023-anziehen.mp3",
+      "filename": "s02-023-anziehen.mp3",
+      "section": "s02",
+      "byteSize": 30137,
+      "sha256": "a99cc548a98c1b1913762c56927ae9f6edcb249850ab59cf928a7fe1d032c7f7",
+      "textDe": "Ich möchte mich anziehen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-024-frische-kleidung.mp3",
+      "filename": "s02-024-frische-kleidung.mp3",
+      "section": "s02",
+      "byteSize": 35988,
+      "sha256": "e03e75c92d039cf28134a69ee6c3832a0e97db47890f95927b99fb42409b4c83",
+      "textDe": "Ich möchte frische Kleidung.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-025-handtuch.mp3",
+      "filename": "s02-025-handtuch.mp3",
+      "section": "s02",
+      "byteSize": 29301,
+      "sha256": "cd8884b094a687b455d91e36e8a43b3a3ab6e02a76b0f4b25bcd9dc89656a82e",
+      "textDe": "Ich brauche ein Handtuch.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-026-privatsphaere.mp3",
+      "filename": "s02-026-privatsphaere.mp3",
+      "section": "s02",
+      "byteSize": 48527,
+      "sha256": "fb613454c0e7079498546490fd61c31b9cb9148efbdaab5f1a6a66da30f3e899",
+      "textDe": "Bitte achten Sie auf meine Privatsphäre.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-027-mehr-zeit-im-bad.mp3",
+      "filename": "s02-027-mehr-zeit-im-bad.mp3",
+      "section": "s02",
+      "byteSize": 37660,
+      "sha256": "f95e8a15adf5404270fd0048e1e93e206ba29c989e206556db3fc1f77cb08920",
+      "textDe": "Ich brauche mehr Zeit im Bad.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-028-hinsetzen.mp3",
+      "filename": "s02-028-hinsetzen.mp3",
+      "section": "s02",
+      "byteSize": 27629,
+      "sha256": "9e2ac2b4a4acbb1203f516bc6fdfa692d57ce89a067195aa6e14877c3f540fd4",
+      "textDe": "Ich möchte mich hinsetzen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-029-decke.mp3",
+      "filename": "s02-029-decke.mp3",
+      "section": "s02",
+      "byteSize": 28465,
+      "sha256": "46b2e904be17f4b28d7ba9f23db3cd50c53b69e32b3cc1961c201afd2df6184e",
+      "textDe": "Ich brauche eine Decke.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-030-fenster-oeffnen.mp3",
+      "filename": "s02-030-fenster-oeffnen.mp3",
+      "section": "s02",
+      "byteSize": 26375,
+      "sha256": "1b6d3b814fa06e22afe56b95452b00c24b75ad0d3f179db938d0b71ede981c5b",
+      "textDe": "Bitte öffnen Sie das Fenster.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-031-fenster-schliessen.mp3",
+      "filename": "s02-031-fenster-schliessen.mp3",
+      "section": "s02",
+      "byteSize": 27629,
+      "sha256": "5edd17d81252fefc30fb072ed50cf6988d66359de977b3bc9cc71710516da8f6",
+      "textDe": "Bitte schließen Sie das Fenster.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-032-licht-heller.mp3",
+      "filename": "s02-032-licht-heller.mp3",
+      "section": "s02",
+      "byteSize": 27629,
+      "sha256": "9e2807badc71bc08431a4eea066c408680d54b129b6df77d698a6cafe10cb0e1",
+      "textDe": "Bitte machen Sie das Licht heller.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-033-licht-dunkler.mp3",
+      "filename": "s02-033-licht-dunkler.mp3",
+      "section": "s02",
+      "byteSize": 31391,
+      "sha256": "e4c73d95f571926ea437309378be2983e23838cb6ffd943c61cb737ae43028ea",
+      "textDe": "Bitte machen Sie das Licht dunkler.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-034-bequemer-sitzen.mp3",
+      "filename": "s02-034-bequemer-sitzen.mp3",
+      "section": "s02",
+      "byteSize": 35152,
+      "sha256": "cce60a4835bf44e6b5434f252160008f81d732a5a200c2e71af0fd1f8f2f8da7",
+      "textDe": "Ich möchte bequemer sitzen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-035-gehstock.mp3",
+      "filename": "s02-035-gehstock.mp3",
+      "section": "s02",
+      "byteSize": 31391,
+      "sha256": "fa8f9e429cb2c0914042f5f4e17e9361564c152d17917cf0253e4aba299d0087",
+      "textDe": "Ich brauche einen Gehstock.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s02/s02-036-rollator.mp3",
+      "filename": "s02-036-rollator.mp3",
+      "section": "s02",
+      "byteSize": 35152,
+      "sha256": "3d3efd905984afb3d603fb5138d6f21880115f8e976c9484d72d2c64370f7f34",
+      "textDe": "Ich brauche einen Rollator.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-001-schmerzen-im-nacken.mp3",
+      "filename": "s03-001-schmerzen-im-nacken.mp3",
+      "section": "s03",
+      "byteSize": 24285,
+      "sha256": "d82d5189724c262505ac5dd85adf3382c103ffb240b51f9b15cbc04c81c72562",
+      "textDe": "Ich habe Schmerzen im Nacken.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-002-schmerzen-in-der-schulter.mp3",
+      "filename": "s03-002-schmerzen-in-der-schulter.mp3",
+      "section": "s03",
+      "byteSize": 28465,
+      "sha256": "7b3d311d687002888ea3a657519ff97b003ac39c174d18b93f26fb3daf7f3400",
+      "textDe": "Ich habe Schmerzen in der Schulter.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-003-schmerzen-im-arm.mp3",
+      "filename": "s03-003-schmerzen-im-arm.mp3",
+      "section": "s03",
+      "byteSize": 24703,
+      "sha256": "320c29416d07f01164d77269916ff3bc91c91097ce8ecbdab856469935c9d9ae",
+      "textDe": "Ich habe Schmerzen im Arm.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-004-schmerzen-in-der-hand.mp3",
+      "filename": "s03-004-schmerzen-in-der-hand.mp3",
+      "section": "s03",
+      "byteSize": 25539,
+      "sha256": "2bc516ea35bd06b8d32d45eb96a9bd88a5cecc3937ad8bc90db39118f46412c3",
+      "textDe": "Ich habe Schmerzen in der Hand.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-005-schmerzen-im-ruecken.mp3",
+      "filename": "s03-005-schmerzen-im-ruecken.mp3",
+      "section": "s03",
+      "byteSize": 24285,
+      "sha256": "18d9f7cb6e2ab37161036bc4b07446ef478fd4a16691e6bb4126b8e59178a7ae",
+      "textDe": "Ich habe Schmerzen im Rücken.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-006-schmerzen-im-bauch.mp3",
+      "filename": "s03-006-schmerzen-im-bauch.mp3",
+      "section": "s03",
+      "byteSize": 24285,
+      "sha256": "90f359f00cde15c6e96f2be3e9708e43b655284d2bc28e5fab76de5c13918986",
+      "textDe": "Ich habe Schmerzen im Bauch.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-007-schmerzen-in-der-huefte.mp3",
+      "filename": "s03-007-schmerzen-in-der-huefte.mp3",
+      "section": "s03",
+      "byteSize": 27629,
+      "sha256": "ccec750dedb18ed10557bdc2c25c219aca8ca112bbb564164c7e0c31fe8a5c46",
+      "textDe": "Ich habe Schmerzen in der Hüfte.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-008-schmerzen-im-bein.mp3",
+      "filename": "s03-008-schmerzen-im-bein.mp3",
+      "section": "s03",
+      "byteSize": 24285,
+      "sha256": "d81a5115d41ca5f7ac05572b6e8004ec37c8bc2d3f36875614e503aabe559f01",
+      "textDe": "Ich habe Schmerzen im Bein.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-009-schmerzen-im-knie.mp3",
+      "filename": "s03-009-schmerzen-im-knie.mp3",
+      "section": "s03",
+      "byteSize": 26375,
+      "sha256": "4af2763a6083cbb7496493d45ac8cc761de634b53f98043136ca95f40ed5f553",
+      "textDe": "Ich habe Schmerzen im Knie.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-010-schmerzen-im-fuss.mp3",
+      "filename": "s03-010-schmerzen-im-fuss.mp3",
+      "section": "s03",
+      "byteSize": 26375,
+      "sha256": "105140acd782d23113ddfbbc2e308c520d6cf5b5abec909a465714d63a7cd64f",
+      "textDe": "Ich habe Schmerzen im Fuß.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-011-schmerzen-in-der-brust.mp3",
+      "filename": "s03-011-schmerzen-in-der-brust.mp3",
+      "section": "s03",
+      "byteSize": 29301,
+      "sha256": "b130d7a65b09c9cd4c1e38eec3b7f0d995eb899fbdef928687a4bbf6ef3bb72d",
+      "textDe": "Ich habe Schmerzen in der Brust.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-012-schmerzen-leicht.mp3",
+      "filename": "s03-012-schmerzen-leicht.mp3",
+      "section": "s03",
+      "byteSize": 24285,
+      "sha256": "5ae8f0129a0cc0d27ca9eada5af6b8816f34379ea7d45784df7deca9a6e40288",
+      "textDe": "Die Schmerzen sind leicht.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-013-schmerzen-mittelstark.mp3",
+      "filename": "s03-013-schmerzen-mittelstark.mp3",
+      "section": "s03",
+      "byteSize": 30137,
+      "sha256": "f9114a138358f8c992c6e2fa37c5ace2588cadd636734a9667f4c51c59918444",
+      "textDe": "Die Schmerzen sind mittelstark.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-014-schmerzen-stark.mp3",
+      "filename": "s03-014-schmerzen-stark.mp3",
+      "section": "s03",
+      "byteSize": 24703,
+      "sha256": "1181370a075d8eb8b3b8e9b46cf0c74e8434abb84435b8a9cb9401497c0664a7",
+      "textDe": "Die Schmerzen sind stark.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-015-schmerzen-ploetzlich-staerker.mp3",
+      "filename": "s03-015-schmerzen-ploetzlich-staerker.mp3",
+      "section": "s03",
+      "byteSize": 39750,
+      "sha256": "17e36dc52eba0bc63fbfc54240dd771f8a4dd49044cc04daf7d11efa40f267ca",
+      "textDe": "Die Schmerzen werden plötzlich stärker.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-016-mir-ist-uebel.mp3",
+      "filename": "s03-016-mir-ist-uebel.mp3",
+      "section": "s03",
+      "byteSize": 18016,
+      "sha256": "40767c4b3abf5ab3f99732c9fc3f5e48256ede5aeeb4db96d6efd172e825e41d",
+      "textDe": "Mir ist übel.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-017-ich-fuehle-mich-schwach.mp3",
+      "filename": "s03-017-ich-fuehle-mich-schwach.mp3",
+      "section": "s03",
+      "byteSize": 20942,
+      "sha256": "e0717e9bb0a09b6253bab01d79d122f0609c811315c4deb3b92ce9ff985d4dfb",
+      "textDe": "Ich fühle mich schwach.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-018-ich-zittere.mp3",
+      "filename": "s03-018-ich-zittere.mp3",
+      "section": "s03",
+      "byteSize": 14254,
+      "sha256": "7f42418de6f2fe3b7ed15a6259a29487d8d00bb42a3154d25b313cad316a90d6",
+      "textDe": "Ich zittere.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-019-ich-schwitze-ungewoehnlich-stark.mp3",
+      "filename": "s03-019-ich-schwitze-ungewoehnlich-stark.mp3",
+      "section": "s03",
+      "byteSize": 29301,
+      "sha256": "9cc33db6f545d1e23d151228ccae523d947918caffde6802cb192b39245dea36",
+      "textDe": "Ich schwitze ungewöhnlich stark.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-020-ich-kann-schlecht-sehen.mp3",
+      "filename": "s03-020-ich-kann-schlecht-sehen.mp3",
+      "section": "s03",
+      "byteSize": 21777,
+      "sha256": "588340bdafe0bae22e07c41d6bcb6c6c32f959e56a40346d76f643a5c2af96d6",
+      "textDe": "Ich kann schlecht sehen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-021-ich-kann-schlecht-hoeren.mp3",
+      "filename": "s03-021-ich-kann-schlecht-hoeren.mp3",
+      "section": "s03",
+      "byteSize": 20942,
+      "sha256": "690007f838453cee1a9fc6091892e81754e555b0089bc8e739c65152bf77ff1b",
+      "textDe": "Ich kann schlecht hören.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-022-atmen-faellt-mir-schwer.mp3",
+      "filename": "s03-022-atmen-faellt-mir-schwer.mp3",
+      "section": "s03",
+      "byteSize": 24703,
+      "sha256": "8fd9f1349f7d44b2295063583dac387cff4e86d41878b73131542faaa7f3da09",
+      "textDe": "Atmen fällt mir schwer.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-023-schlucken-faellt-mir-schwer.mp3",
+      "filename": "s03-023-schlucken-faellt-mir-schwer.mp3",
+      "section": "s03",
+      "byteSize": 24703,
+      "sha256": "dd79f9c0b8133e2bd8c32ceb0f05379360b1ad5113781368c5baae5724a362b8",
+      "textDe": "Schlucken fällt mir schwer.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-024-mund-fuehlt-sich-trocken-an.mp3",
+      "filename": "s03-024-mund-fuehlt-sich-trocken-an.mp3",
+      "section": "s03",
+      "byteSize": 28465,
+      "sha256": "558a2670ae4aa969d1c2501f866fbac2d98272982f4c9d6b5eea3be02f30b90c",
+      "textDe": "Mein Mund fühlt sich trocken an.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-025-hand-fuehlt-sich-taub-an.mp3",
+      "filename": "s03-025-hand-fuehlt-sich-taub-an.mp3",
+      "section": "s03",
+      "byteSize": 27211,
+      "sha256": "6c079516ef05a2f7a62739516d329f7a029ed0074065eb8ff8cb2a70a2042206",
+      "textDe": "Meine Hand fühlt sich taub an.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-026-bein-fuehlt-sich-schwer-an.mp3",
+      "filename": "s03-026-bein-fuehlt-sich-schwer-an.mp3",
+      "section": "s03",
+      "byteSize": 28465,
+      "sha256": "d347ffd730a868cf7e6dd3946c4b5a1baea8e9dd1d05f00539c13b4bfb14e6ff",
+      "textDe": "Mein Bein fühlt sich schwer an.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-027-heute-weniger-kraft.mp3",
+      "filename": "s03-027-heute-weniger-kraft.mp3",
+      "section": "s03",
+      "byteSize": 25539,
+      "sha256": "43868cf6d83026b052a57b8a1424ce99eb9eaf964980b77fe89a5a176b25bfd6",
+      "textDe": "Ich habe heute weniger Kraft.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-028-heute-anders-als-sonst.mp3",
+      "filename": "s03-028-heute-anders-als-sonst.mp3",
+      "section": "s03",
+      "byteSize": 32226,
+      "sha256": "25550aeb78eef95a7be000f9db65ed0ca9be121f634cad5fd05aaed81d629428",
+      "textDe": "Heute ist es anders als sonst.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-029-veraenderung-ploetzlich-begonnen.mp3",
+      "filename": "s03-029-veraenderung-ploetzlich-begonnen.mp3",
+      "section": "s03",
+      "byteSize": 33062,
+      "sha256": "e994d7778cc65753f6a65d7c5cc5f93c02eaad8bf95cbd0d9e36a00540fcb209",
+      "textDe": "Die Veränderung hat plötzlich begonnen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-030-veraenderung-ernst-nehmen.mp3",
+      "filename": "s03-030-veraenderung-ernst-nehmen.mp3",
+      "section": "s03",
+      "byteSize": 35152,
+      "sha256": "82867c47dad80dbe87ce12bbbf7b063c930ec9f2bc9c7232b3e76811f5dec429",
+      "textDe": "Bitte nehmen Sie die Veränderung ernst.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-031-medikament-vorgesehen.mp3",
+      "filename": "s03-031-medikament-vorgesehen.mp3",
+      "section": "s03",
+      "byteSize": 53960,
+      "sha256": "05e98c68f9fc1f532eca56df129728fbdaf02baabb5382b7b0922951ea4fdf85",
+      "textDe": "Ist dieses Medikament für mich vorgesehen?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-032-medikament-namen-vorlesen.mp3",
+      "filename": "s03-032-medikament-namen-vorlesen.mp3",
+      "section": "s03",
+      "byteSize": 49363,
+      "sha256": "5ffe6ce491e407048c0639ccbe8fc9a1d7b2da66f7faa29a62ceafd6a199492c",
+      "textDe": "Bitte lesen Sie mir den Namen des Medikaments vor.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-033-einnahmeplan-pruefen.mp3",
+      "filename": "s03-033-einnahmeplan-pruefen.mp3",
+      "section": "s03",
+      "byteSize": 45601,
+      "sha256": "521a74ca074d1d389e2793749fc5db6d08b2efe4c18b8763a9bf0a23f315fcb7",
+      "textDe": "Bitte prüfen Sie meinen Einnahmeplan.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-034-medikament-jetzt-nehmen.mp3",
+      "filename": "s03-034-medikament-jetzt-nehmen.mp3",
+      "section": "s03",
+      "byteSize": 38914,
+      "sha256": "b8525506beb25a349b0d62fb441ad8ad8344648fb4939ce3453ecdff15248f1c",
+      "textDe": "Soll ich dieses Medikament jetzt nehmen?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-035-praxis-nachfragen.mp3",
+      "filename": "s03-035-praxis-nachfragen.mp3",
+      "section": "s03",
+      "byteSize": 56050,
+      "sha256": "bbe3bfa13563a7769be9281b9717af1d20f686ab9204a7021a56bb15378bdbd8",
+      "textDe": "Bitte fragen Sie in der Praxis nach.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s03/s03-036-frage-zur-einnahme-aufschreiben.mp3",
+      "filename": "s03-036-frage-zur-einnahme-aufschreiben.mp3",
+      "section": "s03",
+      "byteSize": 54378,
+      "sha256": "4153347bca6866d52a43b4451c883ee03fdc5b116276f82f2a948caeed7f9acd",
+      "textDe": "Bitte schreiben Sie meine Frage zur Einnahme auf.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-001-ich-stimme-nicht-zu.mp3",
+      "filename": "s04-001-ich-stimme-nicht-zu.mp3",
+      "section": "s04",
+      "byteSize": 23449,
+      "sha256": "a0f994098016a225ea4c56fd9d204e363deb71d0eb4b553bffbc805f8d9a2ae3",
+      "textDe": "Ich stimme nicht zu.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-002-damit-bin-ich-einverstanden.mp3",
+      "filename": "s04-002-damit-bin-ich-einverstanden.mp3",
+      "section": "s04",
+      "byteSize": 24703,
+      "sha256": "817ef60af2a8d542d84e0ef73a0d87ec6d48b71dd2b18335ed070d25964e674e",
+      "textDe": "Damit bin ich einverstanden.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-003-damit-bin-ich-nicht-einverstanden.mp3",
+      "filename": "s04-003-damit-bin-ich-nicht-einverstanden.mp3",
+      "section": "s04",
+      "byteSize": 30137,
+      "sha256": "2be8ce52226d89ffd733b1f250ace1b711b739469103c20230b6fbf0c97a9d5a",
+      "textDe": "Damit bin ich nicht einverstanden.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-004-diese-moeglichkeit-passt-fuer-mich.mp3",
+      "filename": "s04-004-diese-moeglichkeit-passt-fuer-mich.mp3",
+      "section": "s04",
+      "byteSize": 28465,
+      "sha256": "36e42c7c0638dbf66a48edeec48c5c40d0afa8c72214b41040ded8f208be777a",
+      "textDe": "Diese Möglichkeit passt für mich.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-005-diese-moeglichkeit-passt-nicht-fuer-mich.mp3",
+      "filename": "s04-005-diese-moeglichkeit-passt-nicht-fuer-mich.mp3",
+      "section": "s04",
+      "byteSize": 35988,
+      "sha256": "0f09156da578f981bd991ddfc786305104b3c092197387c03c533d5fa5a78f44",
+      "textDe": "Diese Möglichkeit passt nicht für mich.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-006-ich-moechte-lieber-die-andere-moeglichkeit.mp3",
+      "filename": "s04-006-ich-moechte-lieber-die-andere-moeglichkeit.mp3",
+      "section": "s04",
+      "byteSize": 34316,
+      "sha256": "6a5ee674ed04714e6f074fd63c304e73ff91d0b090007b3539076ad546a8d694",
+      "textDe": "Ich möchte lieber die andere Möglichkeit.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-007-ich-moechte-nichts-davon-auswaehlen.mp3",
+      "filename": "s04-007-ich-moechte-nichts-davon-auswaehlen.mp3",
+      "section": "s04",
+      "byteSize": 32226,
+      "sha256": "360e7718eb6ec77ee9a3bf0bd31f72a0b37f948980f02ae484454df4c0694415",
+      "textDe": "Ich möchte nichts davon auswählen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-008-ich-moechte-gemeinsam-entscheiden.mp3",
+      "filename": "s04-008-ich-moechte-gemeinsam-entscheiden.mp3",
+      "section": "s04",
+      "byteSize": 30137,
+      "sha256": "54697afd59eaed26654927ce71f2b8c3689cc642532d6073f79a0b8e3d90ad0a",
+      "textDe": "Ich möchte gemeinsam entscheiden.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-009-das-entscheide-ich-selbst.mp3",
+      "filename": "s04-009-das-entscheide-ich-selbst.mp3",
+      "section": "s04",
+      "byteSize": 25539,
+      "sha256": "212d934fda904e03f08d3c2d21ef6bb3dc158e7a6731079d35c74cab7904c646",
+      "textDe": "Das entscheide ich selbst.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-010-bitte-beruecksichtigen-sie-meine-meinung.mp3",
+      "filename": "s04-010-bitte-beruecksichtigen-sie-meine-meinung.mp3",
+      "section": "s04",
+      "byteSize": 33898,
+      "sha256": "723b2392bc161c7c82e3be8ce747c3db97e3149bae3cba9a4db8a619659bb607",
+      "textDe": "Bitte berücksichtigen Sie meine Meinung.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-011-bitte-sprechen-sie-direkt-mit-mir.mp3",
+      "filename": "s04-011-bitte-sprechen-sie-direkt-mit-mir.mp3",
+      "section": "s04",
+      "byteSize": 28465,
+      "sha256": "2f90c55dc010f873735957deb802ca9204f14b90b191d26b6b01669d2bd0c9c1",
+      "textDe": "Bitte sprechen Sie direkt mit mir.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-012-bitte-sprechen-sie-nicht-ueber-mich.mp3",
+      "filename": "s04-012-bitte-sprechen-sie-nicht-ueber-mich.mp3",
+      "section": "s04",
+      "byteSize": 41839,
+      "sha256": "ee1295d83d5c7a1516b7d3ef3aadedacacdeb3172c135b199f88668b1f92903d",
+      "textDe": "Bitte sprechen Sie nicht über mich, wenn ich dabei bin.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-013-bitte-lassen-sie-mich-selbst-antworten.mp3",
+      "filename": "s04-013-bitte-lassen-sie-mich-selbst-antworten.mp3",
+      "section": "s04",
+      "byteSize": 32226,
+      "sha256": "f229292a5ea9c091157f72880c2bc87828e4f03b7734d161cce86e60b2cc908d",
+      "textDe": "Bitte lassen Sie mich selbst antworten.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-014-bitte-entscheiden-sie-nicht-ohne-mich.mp3",
+      "filename": "s04-014-bitte-entscheiden-sie-nicht-ohne-mich.mp3",
+      "section": "s04",
+      "byteSize": 32226,
+      "sha256": "09917d2f2d421ecb30bc16f90ea3e6bac5797ca9cf9347ab4f931b9bfd7043dc",
+      "textDe": "Bitte entscheiden Sie nicht ohne mich.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-015-diese-information-ist-privat.mp3",
+      "filename": "s04-015-diese-information-ist-privat.mp3",
+      "section": "s04",
+      "byteSize": 29301,
+      "sha256": "b45fc57ed911d0658d7ea73f49239cc7114f495e8823e6c13701693c173e4965",
+      "textDe": "Diese Information ist privat.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-016-ich-moechte-darueber-nicht-sprechen.mp3",
+      "filename": "s04-016-ich-moechte-darueber-nicht-sprechen.mp3",
+      "section": "s04",
+      "byteSize": 31391,
+      "sha256": "f9a5158b0061f406ddbe75c206b404556436e1ff3fe8d07470d879ebba5a1f69",
+      "textDe": "Ich möchte darüber nicht sprechen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-017-ich-moechte-jetzt-allein-sein.mp3",
+      "filename": "s04-017-ich-moechte-jetzt-allein-sein.mp3",
+      "section": "s04",
+      "byteSize": 25539,
+      "sha256": "0b6346fe065e4c4539fb08ce1b03b2bb459fd52bb35049eb709cb6b66f58ad38",
+      "textDe": "Ich möchte jetzt allein sein.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-018-bitte-fragen-sie-mich-bevor-sie-helfen.mp3",
+      "filename": "s04-018-bitte-fragen-sie-mich-bevor-sie-helfen.mp3",
+      "section": "s04",
+      "byteSize": 33898,
+      "sha256": "89fab5eed32e88a945433a05fa7d98109df87247146b6747e98900f1c91ba13a",
+      "textDe": "Bitte fragen Sie mich, bevor Sie helfen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-019-danke-fuer-ihre-hilfe.mp3",
+      "filename": "s04-019-danke-fuer-ihre-hilfe.mp3",
+      "section": "s04",
+      "byteSize": 21777,
+      "sha256": "fd92dc43043aadc0a84bc2a979fd3f997d3d302f59e478eb3145c46aef0f1ccc",
+      "textDe": "Danke für Ihre Hilfe.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-020-ich-freue-mich-dass-sie-da-sind.mp3",
+      "filename": "s04-020-ich-freue-mich-dass-sie-da-sind.mp3",
+      "section": "s04",
+      "byteSize": 28465,
+      "sha256": "3ed91657777053b3118e695dccd09623a369a387f93e2887b51f780fb69c7309",
+      "textDe": "Ich freue mich, dass Sie da sind.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-021-partnerin-oder-partner-anrufen.mp3",
+      "filename": "s04-021-partnerin-oder-partner-anrufen.mp3",
+      "section": "s04",
+      "byteSize": 49363,
+      "sha256": "e658d6ef7955f9d0413abcb53cd40f13c116960aa8006417ca09daec6269cb39",
+      "textDe": "Bitte rufen Sie meine Partnerin oder meinen Partner an.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-022-familienmitglied-anrufen.mp3",
+      "filename": "s04-022-familienmitglied-anrufen.mp3",
+      "section": "s04",
+      "byteSize": 35988,
+      "sha256": "45e7cdbc38aede0cec305fcdb0092d6b2c0e7f2de4d2447a70fe41d1a44806e4",
+      "textDe": "Bitte rufen Sie ein Familienmitglied an.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-023-familie-kurze-nachricht.mp3",
+      "filename": "s04-023-familie-kurze-nachricht.mp3",
+      "section": "s04",
+      "byteSize": 47691,
+      "sha256": "e79b1a219fe5521434608f1005d6c99ca335faf6ff9c4406be05c206785a1003",
+      "textDe": "Bitte schicken Sie meiner Familie eine kurze Nachricht.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-024-besuch-anfragen.mp3",
+      "filename": "s04-024-besuch-anfragen.mp3",
+      "section": "s04",
+      "byteSize": 38914,
+      "sha256": "cb69d8866b67f65105bed73f94d4766d68a302cc3ad20cabb718ab058584ac96",
+      "textDe": "Bitte fragen Sie, ob jemand mich besuchen kann.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-025-hilfe-selbst-anzurufen.mp3",
+      "filename": "s04-025-hilfe-selbst-anzurufen.mp3",
+      "section": "s04",
+      "byteSize": 34316,
+      "sha256": "56f9a809af140c0d3847308278c633156a0f547f0f738b4d9416b1ee4d422a57",
+      "textDe": "Bitte helfen Sie mir, selbst anzurufen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-026-antwort-vorlesen.mp3",
+      "filename": "s04-026-antwort-vorlesen.mp3",
+      "section": "s04",
+      "byteSize": 31391,
+      "sha256": "e3c07e223939f62ccec3e1af37f859a43cf0aae04fdab1ddd2baac3df1f7e308",
+      "textDe": "Bitte lesen Sie mir die Antwort vor.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-027-meine-worte-genau-weitergeben.mp3",
+      "filename": "s04-027-meine-worte-genau-weitergeben.mp3",
+      "section": "s04",
+      "byteSize": 37660,
+      "sha256": "265139ce3f033263c1d32ce3ec1ad19590672e0183f429e95d860ce4b60cb54b",
+      "textDe": "Bitte geben Sie meine Worte genau so weiter.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-028-handy-bringen.mp3",
+      "filename": "s04-028-handy-bringen.mp3",
+      "section": "s04",
+      "byteSize": 27629,
+      "sha256": "04c5aa8595e98a818e78b26532c978b6bed063ca09a2aca8804153bc5aec3873",
+      "textDe": "Bitte bringen Sie mir mein Handy.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-029-handy-aufladen.mp3",
+      "filename": "s04-029-handy-aufladen.mp3",
+      "section": "s04",
+      "byteSize": 27211,
+      "sha256": "2081ae505509ebf13300f68c150a060f43b0ffd8c3a096b8e83489319bf8c18c",
+      "textDe": "Bitte laden Sie mein Handy auf.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-030-nachrichten-oeffnen.mp3",
+      "filename": "s04-030-nachrichten-oeffnen.mp3",
+      "section": "s04",
+      "byteSize": 30137,
+      "sha256": "e1e4c88e7b8ebb0b5c8237c2fee4b8c6bcd27f2eea277cc8c06bb98d8a54dfc5",
+      "textDe": "Bitte öffnen Sie meine Nachrichten.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-031-hilfe-beim-videoanruf.mp3",
+      "filename": "s04-031-hilfe-beim-videoanruf.mp3",
+      "section": "s04",
+      "byteSize": 36824,
+      "sha256": "6ea4fd20f33a01d25bca4637f35c4625646e1d7a75df44c4bb4864b053ecb735",
+      "textDe": "Bitte helfen Sie mir bei einem Videoanruf.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-032-bestimmte-sendung-suchen.mp3",
+      "filename": "s04-032-bestimmte-sendung-suchen.mp3",
+      "section": "s04",
+      "byteSize": 33898,
+      "sha256": "19426d357311b1d88fad6ba2423d7498a41198a396b62ff981e7e3e07ec45921",
+      "textDe": "Bitte suchen Sie eine bestimmte Sendung.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-033-etwas-suchen.mp3",
+      "filename": "s04-033-etwas-suchen.mp3",
+      "section": "s04",
+      "byteSize": 33898,
+      "sha256": "1c9d6cc0bb9c9fa23684d23b212e6f22adfdd81ae7c7b71eb31861dfc40d9760",
+      "textDe": "Bitte helfen Sie mir, etwas zu suchen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-034-geraet-mit-internet-verbinden.mp3",
+      "filename": "s04-034-geraet-mit-internet-verbinden.mp3",
+      "section": "s04",
+      "byteSize": 41839,
+      "sha256": "7d02c0c4ef7687106bdf315f693a64c4110feae28d6ec59135eaeb92afd2f763",
+      "textDe": "Bitte verbinden Sie das Gerät mit dem Internet.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-035-kamera-oeffnen.mp3",
+      "filename": "s04-035-kamera-oeffnen.mp3",
+      "section": "s04",
+      "byteSize": 27211,
+      "sha256": "668f1e28dac143d70841cac9875caeea9129203816f9becb4a88910c543b67c4",
+      "textDe": "Bitte öffnen Sie die Kamera.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s04/s04-036-fotos-zeigen.mp3",
+      "filename": "s04-036-fotos-zeigen.mp3",
+      "section": "s04",
+      "byteSize": 27211,
+      "sha256": "34f8953e24f5e4cdfb9b458a7b89b8bc69d3dae37604c4c7d3a0d37328f3c521",
+      "textDe": "Bitte zeigen Sie mir die Fotos.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-001-wetter-heute.mp3",
+      "filename": "s05-001-wetter-heute.mp3",
+      "section": "s05",
+      "byteSize": 24285,
+      "sha256": "111b49f94e5bd36ba474237c452e6b77cb3006f7869c48a9c29d098fba01f5ff",
+      "textDe": "Wie wird das Wetter heute?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-002-wetter-morgen.mp3",
+      "filename": "s05-002-wetter-morgen.mp3",
+      "section": "s05",
+      "byteSize": 22613,
+      "sha256": "fd9f0b814f09bb661414d55a0d16e8081910d26d811572b6531f90d3063d425a",
+      "textDe": "Wie wird das Wetter morgen?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-003-temperatur-heute.mp3",
+      "filename": "s05-003-temperatur-heute.mp3",
+      "section": "s05",
+      "byteSize": 21777,
+      "sha256": "ac90d41bc56f8f2047c541eca965b1402547b747cd6a7647238386a4303d2d08",
+      "textDe": "Wie warm wird es heute?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-004-regnet-es.mp3",
+      "filename": "s05-004-regnet-es.mp3",
+      "section": "s05",
+      "byteSize": 20524,
+      "sha256": "60f0fbd46cfa8d76b49a245d96f3ff72509825dcd6559185f372a4afcee65747",
+      "textDe": "Regnet es heute?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-005-wetter-am-wochenende.mp3",
+      "filename": "s05-005-wetter-am-wochenende.mp3",
+      "section": "s05",
+      "byteSize": 28465,
+      "sha256": "5034f00dd85cea06c0550bcb10c90ef285416c52643d411f20c9cbafdbbf15ea",
+      "textDe": "Wie wird das Wetter am Wochenende?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-006-nachrichten-heute.mp3",
+      "filename": "s05-006-nachrichten-heute.mp3",
+      "section": "s05",
+      "byteSize": 30973,
+      "sha256": "6f87600b11876d72188bb3a407d93c3f7ab7b623a2900a732869db523852d36d",
+      "textDe": "Was sind die Nachrichten von heute?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-007-nachrichten-aus-deutschland.mp3",
+      "filename": "s05-007-nachrichten-aus-deutschland.mp3",
+      "section": "s05",
+      "byteSize": 31391,
+      "sha256": "df841b994e014d71309c2e9333c303304a2e425d698314c5a0f5003d6216ab2c",
+      "textDe": "Was gibt es Neues aus Deutschland?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-008-sportnachrichten.mp3",
+      "filename": "s05-008-sportnachrichten.mp3",
+      "section": "s05",
+      "byteSize": 29301,
+      "sha256": "1f5ab6e50c417c36a042f09d2a2e2c7bf516cc3b13933b4542e40713f9c24522",
+      "textDe": "Was gibt es Neues im Sport?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-009-fernsehprogramm-heute.mp3",
+      "filename": "s05-009-fernsehprogramm-heute.mp3",
+      "section": "s05",
+      "byteSize": 25539,
+      "sha256": "54d4e2ddf18f2631dd0b7c3131900303b0f8ae0fae7f92779700522b706c839d",
+      "textDe": "Was läuft heute im Fernsehen?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-010-sendung-finden.mp3",
+      "filename": "s05-010-sendung-finden.mp3",
+      "section": "s05",
+      "byteSize": 22613,
+      "sha256": "27b69d197348b9be49b83b24c5a9273062229f25f9e4216b2d81c20c4e2affdf",
+      "textDe": "Wann läuft meine Sendung?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-011-film-finden.mp3",
+      "filename": "s05-011-film-finden.mp3",
+      "section": "s05",
+      "byteSize": 25539,
+      "sha256": "9707f3f117e401bd41b967a86e4ab1d45f65c04287b5f068c52b801a7a7185e0",
+      "textDe": "Ich möchte einen Film finden.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-012-serie-finden.mp3",
+      "filename": "s05-012-serie-finden.mp3",
+      "section": "s05",
+      "byteSize": 30137,
+      "sha256": "2b3f3b625cbd3d4887c4d1476911649594360cf87c442d9152883d536e8e42d3",
+      "textDe": "Ich möchte eine Serie finden.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-013-musik-finden.mp3",
+      "filename": "s05-013-musik-finden.mp3",
+      "section": "s05",
+      "byteSize": 24703,
+      "sha256": "f1b173bfbc51ab1e211aeb78bf6cab6beeebea20c9dd6a13fa47494bfb1ab39c",
+      "textDe": "Ich möchte Musik hören.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-014-video-finden.mp3",
+      "filename": "s05-014-video-finden.mp3",
+      "section": "s05",
+      "byteSize": 24703,
+      "sha256": "59669c5ac2434f768e94d91e7f6da5a591dee344c5965203d4dd6ab7ffea2fb7",
+      "textDe": "Ich möchte ein Video ansehen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-015-radio-hoeren.mp3",
+      "filename": "s05-015-radio-hoeren.mp3",
+      "section": "s05",
+      "byteSize": 23449,
+      "sha256": "1aa12aa2ce88ba4304ec810497bef0bbbf6c4365f1cf6ecfe72d09fddd122d1b",
+      "textDe": "Ich möchte Radio hören.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-016-rezept-finden.mp3",
+      "filename": "s05-016-rezept-finden.mp3",
+      "section": "s05",
+      "byteSize": 28465,
+      "sha256": "844ac082f7c1bcfa59a73fea0c7b6be8217b164b8ce79cc1d1d95aaf0460dbbb",
+      "textDe": "Ich möchte ein Rezept finden.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-017-speise-finden.mp3",
+      "filename": "s05-017-speise-finden.mp3",
+      "section": "s05",
+      "byteSize": 27629,
+      "sha256": "d91e12a29e7a8bf5f29b48ef194c5b38ab16f0fceb955ad62b09af1a2a6e09ff",
+      "textDe": "Wie koche ich dieses Gericht?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-018-oeffnungszeiten.mp3",
+      "filename": "s05-018-oeffnungszeiten.mp3",
+      "section": "s05",
+      "byteSize": 30973,
+      "sha256": "667a9efb0ba28257683ed61c0025aa5ab58922b23bf8958a9379154c1fc282f2",
+      "textDe": "Wann hat dieses Geschäft geöffnet?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-019-adresse-finden.mp3",
+      "filename": "s05-019-adresse-finden.mp3",
+      "section": "s05",
+      "byteSize": 21777,
+      "sha256": "2cd786198ce36e37e95ded0a4f3994403f1362215b9c7f8e78afb4c86400885d",
+      "textDe": "Wie lautet die Adresse?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-020-telefonnummer-finden.mp3",
+      "filename": "s05-020-telefonnummer-finden.mp3",
+      "section": "s05",
+      "byteSize": 27211,
+      "sha256": "2940ce1cfba2dfd67bc1ead117b18fe4c7c2dfb7d4f3f82ef07c7a6c8d2bc5f8",
+      "textDe": "Wie lautet die Telefonnummer?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-021-weg-finden.mp3",
+      "filename": "s05-021-weg-finden.mp3",
+      "section": "s05",
+      "byteSize": 20942,
+      "sha256": "78dca5bbed3040ae2ef61ae36d495803b32c3908f1e960099e18fdd8bf4f969f",
+      "textDe": "Wie komme ich dorthin?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-022-busverbindung.mp3",
+      "filename": "s05-022-busverbindung.mp3",
+      "section": "s05",
+      "byteSize": 23449,
+      "sha256": "8f95ebb877a52a72a16aa5944fb33e54a079f7b1042691fc6ef8a0133c7f2ef9",
+      "textDe": "Wann fährt der nächste Bus?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-023-bahnverbindung.mp3",
+      "filename": "s05-023-bahnverbindung.mp3",
+      "section": "s05",
+      "byteSize": 27211,
+      "sha256": "5271d030ad331aee2e71a7a52722cd39f1e854fd261d71c8129f22b8a2d24778",
+      "textDe": "Wann fährt der nächste Zug?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-024-fahrplan.mp3",
+      "filename": "s05-024-fahrplan.mp3",
+      "section": "s05",
+      "byteSize": 26375,
+      "sha256": "a599891e3ee5ed45e18fa8a988d33e01ac070aa0408194721d319664940cc71a",
+      "textDe": "Ich möchte den Fahrplan sehen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-025-arzt-finden.mp3",
+      "filename": "s05-025-arzt-finden.mp3",
+      "section": "s05",
+      "byteSize": 35152,
+      "sha256": "1f49521a3ef61ae4ec6cd02dc1014d121fcc693a975cb096cd1a272e5f66a1b6",
+      "textDe": "Ich möchte eine Arztpraxis finden.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-026-apotheke-finden.mp3",
+      "filename": "s05-026-apotheke-finden.mp3",
+      "section": "s05",
+      "byteSize": 25539,
+      "sha256": "1b4067169a04f775b9a0175b528a1130ff44747c73ccd875ab6574c07747493e",
+      "textDe": "Wo ist die nächste Apotheke?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-027-notdienst-apotheke.mp3",
+      "filename": "s05-027-notdienst-apotheke.mp3",
+      "section": "s05",
+      "byteSize": 30137,
+      "sha256": "5a9d2a9a0ce78ee6d174889dedfcccf9c0ccaf83edbf37428a9cdb4be65e0ef3",
+      "textDe": "Welche Apotheke hat Notdienst?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-028-uebersetzung.mp3",
+      "filename": "s05-028-uebersetzung.mp3",
+      "section": "s05",
+      "byteSize": 27211,
+      "sha256": "750484a959f68bd38ca80656d9bbfd15771e126e86b2d3274d5527902a4fe2a3",
+      "textDe": "Bitte übersetze dieses Wort.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-029-bedeutung-wort.mp3",
+      "filename": "s05-029-bedeutung-wort.mp3",
+      "section": "s05",
+      "byteSize": 27211,
+      "sha256": "1b94d48a826e6e28da7e1966f868aa07bf164394f0050f70ecf44fd371759cf2",
+      "textDe": "Was bedeutet dieses Wort?",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-030-bilder-ansehen.mp3",
+      "filename": "s05-030-bilder-ansehen.mp3",
+      "section": "s05",
+      "byteSize": 28465,
+      "sha256": "747a96adb20649fea02e490a6658f52628b3dd13cf9960f05dc25cbcabd19219",
+      "textDe": "Ich möchte Bilder dazu sehen.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-031-grosse-schrift.mp3",
+      "filename": "s05-031-grosse-schrift.mp3",
+      "section": "s05",
+      "byteSize": 38914,
+      "sha256": "6fa5bc232566acf0bfa663f26a45936c6827c9314668cc4bdee7c451b6e944a5",
+      "textDe": "Bitte zeige die Ergebnisse in großer Schrift.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-032-vorlesen.mp3",
+      "filename": "s05-032-vorlesen.mp3",
+      "section": "s05",
+      "byteSize": 31391,
+      "sha256": "0bb71515f1983165b6badc86cd0bdba1942d8b3341afd7890ad59a716f204b53",
+      "textDe": "Bitte lies mir die Ergebnisse vor.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-033-weiterlesen.mp3",
+      "filename": "s05-033-weiterlesen.mp3",
+      "section": "s05",
+      "byteSize": 20524,
+      "sha256": "6576db1d7d181da82e611f3ee03139a95065156a26976c6cdb8243a0c715c3d5",
+      "textDe": "Bitte lies weiter.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-034-einfach-erklaeren.mp3",
+      "filename": "s05-034-einfach-erklaeren.mp3",
+      "section": "s05",
+      "byteSize": 24703,
+      "sha256": "393ede35715ebd8f088f53b80053c073862af84bcb3006c4e39fb669ada8d212",
+      "textDe": "Bitte erkläre das einfach.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-035-noch-einmal-suchen.mp3",
+      "filename": "s05-035-noch-einmal-suchen.mp3",
+      "section": "s05",
+      "byteSize": 23449,
+      "sha256": "7112a867137575336496a33fd410bd1f4030bc5eb1ce9f5dd6bb28aaf63bb230",
+      "textDe": "Bitte suche noch einmal.",
+      "reviewed": true
+    },
+    {
+      "relativePath": "s05/s05-036-andere-ergebnisse.mp3",
+      "filename": "s05-036-andere-ergebnisse.mp3",
+      "section": "s05",
+      "byteSize": 29301,
+      "sha256": "aacd2d1480dda914f99ed80f9099fd4cc4588a29ebc7630eb498361b09c897d8",
+      "textDe": "Bitte zeige andere Ergebnisse.",
+      "reviewed": true
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+-- Architecture record: no additional audio registry is required.
+--
+-- The existing private Storage bucket `wortnah-voice-audio` and the existing
+-- `public.voice_audio_assets` table are the single registry used by both the
+-- manual MP3 importer and runtime audio function. `generation_tier = 0` marks
+-- a manually approved clip; null marks a runtime ElevenLabs cache entry.
+-- Both Edge Functions use the same space-scoped fingerprint and storage path.
+-- Browser roles have no direct policies on the registry or bucket: access is
+-- mediated by an authenticated Edge Function after membership verification.

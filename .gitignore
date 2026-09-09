@@ -35,8 +35,13 @@ yarn-error.log*
 
 # typescript
 next-env.d.ts
+*.tsbuildinfo
 /dist/
 /.wrangler/
 /.sites-runtime/
+/.pnpm-store/
 /outputs/
 /work/
+
+# Local source audio is imported to private storage and is never committed.
+/audio-import/ElevenLabs-Audio/

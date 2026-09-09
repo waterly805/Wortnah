@@ -1,0 +1,4 @@
+interface:
+  display_name: "Wortnah Maintainer"
+  short_description: "Maintain and release the Wortnah communication app"
+  default_prompt: "Audit and improve Wortnah in a small verified batch, preserving its patient, companion, audio, and release contracts."

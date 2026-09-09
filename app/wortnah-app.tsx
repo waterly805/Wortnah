@@ -4,28 +4,41 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import {
   ArrowLeft,
+  ArrowDown,
+  ArrowUp,
   BarChart3,
   Bell,
   BookOpen,
   Check,
+  ChevronLeft,
   ChevronRight,
   CircleHelp,
   ClipboardCheck,
   Headphones,
   Heart,
   House,
+  Eye,
+  EyeOff,
+  GripVertical,
   Languages,
+  Layers3,
   LockKeyhole,
   LogOut,
   MessageCircle,
   MessagesSquare,
   Mic,
+  Pencil,
+  Plus,
   RotateCcw,
   Send,
+  Search,
   Settings2,
   ShieldCheck,
   Sparkles,
   Sun,
+  ToggleLeft,
+  ToggleRight,
+  Trash2,
   UserRound,
   Users,
   Volume2,
@@ -33,18 +46,55 @@ import {
   Wrench,
 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { supabase } from "@/lib/supabase";
+import {
+  DEFAULT_ADMIN_CHOICE_MAXIMUM,
+  availablePatientChoiceCounts,
+  normalizePatientChoiceCount,
+} from "@/lib/choice-policy";
+import type { PatientChoiceCount } from "@/lib/choice-policy";
+import { requestPrivateVoiceAudio } from "@/lib/audio-playback";
+import { childrenOf, fallbackInternetSearchNodes } from "@/lib/internet-search";
+import type { InternetSearchNode } from "@/lib/internet-search";
+import { supabase, supabasePublishableKey, supabaseUrl } from "@/lib/supabase";
 
 type Lang = "de" | "en";
 type Role = "user" | "companion";
-type View = "welcome" | "login" | "onboarding" | "pin" | "home" | "communicate" | "practice" | "messages" | "admin" | "settings";
+type PilotProfileKey = "werner" | "admin1" | "admin2";
+type View = "welcome" | "login" | "onboarding" | "pin" | "home" | "communicate" | "search" | "practice" | "messages" | "admin" | "settings";
 type CommStep = "purpose" | "topic" | "detail" | "review" | "practice" | "priority" | "success";
 type Priority = "normal" | "important" | "very_important";
 type VoicePreference = "auto" | "female" | "male";
+type AdminSection = "overview" | "content" | "practice" | "activity" | "settings";
+type ChoiceLevel = "purpose" | "topic" | "detail";
+type ContentArea = "communication" | "search";
 
 type Member = { space_id: string; profile_id: string; role: Role; label: string };
 type Choice = { id: string; de: string; en: string; icon?: typeof MessageCircle };
 type Receipt = { read_at: string; profile_id: string };
+type SearchHistoryItem = { id: string; text: string; createdAt: string };
+type CustomChoice = {
+  id: string;
+  option_key: string;
+  choice_level: ChoiceLevel;
+  purpose_key: string | null;
+  topic_key: string | null;
+  label_de: string;
+  label_en: string;
+  is_published: boolean;
+  practice_eligible: boolean;
+  priority: "high" | "medium" | "low";
+  sort_order: number;
+};
+type PracticeItem = {
+  id: string;
+  source_key: string;
+  label_de: string;
+  label_en: string;
+  difficulty: "easy" | "medium";
+  sort_order: number;
+};
+type ActivityEvent = { id: number; event_type: string; screen_key: string | null; occurred_at: string; profile_id: string; metadata: Record<string, unknown> };
+
 type AppMessage = {
   id: string;
   body_de: string | null;
@@ -87,6 +137,8 @@ const purposes: Choice[] = [
   { id: "tell", de: "Ich möchte etwas erzählen", en: "I want to tell something", icon: MessageCircle },
   { id: "request", de: "Ich möchte um etwas bitten", en: "I want to request something", icon: Heart },
   { id: "ask", de: "Ich habe eine Frage", en: "I have a question", icon: CircleHelp },
+  { id: "reply", de: "Ich möchte kurz antworten", en: "I want to give a short answer", icon: Check },
+  { id: "express", de: "Ich möchte sagen, wie es mir geht", en: "I want to say how I feel", icon: Heart },
   { id: "discuss", de: "Ich möchte über etwas sprechen", en: "I want to discuss something", icon: MessagesSquare },
 ];
 
@@ -216,6 +268,19 @@ const details: Record<string, Choice[]> = {
   ],
 };
 
+
+function searchNodeIcon(node: InternetSearchNode): typeof MessageCircle {
+  if (/weather|temperature|rain/.test(node.option_key)) return Sun;
+  if (/news|television/.test(node.option_key)) return Bell;
+  if (/health|doctor|pharmacy/.test(node.option_key)) return Heart;
+  if (/travel|route|transport|bus|train|place|business/.test(node.option_key)) return House;
+  if (/media|watch|video/.test(node.option_key)) return Mic;
+  if (/music|radio|listen/.test(node.option_key)) return Headphones;
+  if (/food|cook|recipe|language|translate|meaning/.test(node.option_key)) return BookOpen;
+  if (/help|result|search/.test(node.option_key)) return Search;
+  return MessageCircle;
+}
+
 const copy = {
   de: {
     tagline: "Sagen, was wichtig ist.", chooseArea: "Wählen Sie Ihren Bereich", user: "Mein Bereich", companion: "Begleitung",
@@ -226,7 +291,7 @@ const copy = {
     inviteHint: "Begleitung erstellt diesen achtstelligen Code.", setupCompanion: "Bereich als Begleitung einrichten",
     setPin: "Vierstellige PIN festlegen", enterPin: "PIN eingeben", pinHint: "Diese PIN öffnet Wortnah auf diesem Gerät.",
     forgotPin: "PIN vergessen? Sicher neu anmelden", wrongPin: "Die PIN stimmt nicht. Bitte versuchen Sie es noch einmal.",
-    communicate: "Kommunizieren", practice: "Üben", messages: "Mitteilungen", settings: "Meine Einstellungen",
+    communicate: "Kommunizieren", search: "Internet suchen", practice: "Üben", messages: "Mitteilungen", settings: "Meine Einstellungen",
     whatDo: "Was möchten Sie tun?", audioOn: "Ton an", audioOff: "Ton aus", back: "Zurück", repeat: "Noch einmal",
     choosePurpose: "Was möchten Sie sagen?", chooseTopic: "Worum geht es?", chooseDetail: "Wählen Sie den passenden Satz.",
     firstTap: "Einmal antippen zum Anhören. Noch einmal antippen zum Auswählen.", missingTopic: "Hier fehlt etwas", whatMissing: "Was fehlt hier?",
@@ -255,7 +320,7 @@ const copy = {
     inviteHint: "Support creates this eight-character code.", setupCompanion: "Set up the Support space",
     setPin: "Set a four-digit PIN", enterPin: "Enter PIN", pinHint: "This PIN opens Wortnah on this device.",
     forgotPin: "Forgot PIN? Sign in securely again", wrongPin: "That PIN is not correct. Please try again.",
-    communicate: "Communicate", practice: "Practice", messages: "Messages", settings: "My settings",
+    communicate: "Communicate", search: "Search the internet", practice: "Practice", messages: "Messages", settings: "My settings",
     whatDo: "What would you like to do?", audioOn: "Sound on", audioOff: "Sound off", back: "Back", repeat: "Repeat",
     choosePurpose: "What would you like to say?", chooseTopic: "What is it about?", chooseDetail: "Choose the sentence that fits.",
     firstTap: "Tap once to hear it. Tap the same choice again to select it.", missingTopic: "Something is missing", whatMissing: "What is missing here?",
@@ -285,52 +350,70 @@ function Logo() {
   return <span className="wordmark"><span className="wordmark-mark" aria-hidden="true">W</span><span>Wortnah</span></span>;
 }
 
-function PinPad({ title, hint, error, onComplete, onBack }: { title: string; hint: string; error?: string; onComplete: (pin: string) => void; onBack: () => void }) {
+function PinPad({ title, hint, stepLabel, submitLabel, cancelLabel, error, busy = false, busyLabel, onComplete, onBack }: { title: string; hint: string; stepLabel?: string; submitLabel: string; cancelLabel: string; error?: string; busy?: boolean; busyLabel: string; onComplete: (pin: string) => void; onBack: () => void }) {
   const [pin, setPin] = useState("");
+  useEffect(() => { if (error) setPin(""); }, [error]);
+  const updatePin = (next: string) => {
+    if (busy) return;
+    setPin(next.replace(/\D/g, "").slice(0, 4));
+  };
   const add = (digit: string) => {
     if (pin.length >= 4) return;
-    const next = pin + digit;
-    setPin(next);
-    if (next.length === 4) window.setTimeout(() => onComplete(next), 120);
+    updatePin(pin + digit);
   };
   return (
-    <div className="centered-panel">
-      <button className="text-action back-action" onClick={onBack}><ArrowLeft /> Zurück</button>
-      <div className="pin-card">
+    <div className="centered-panel" aria-busy={busy}>
+      <form className="pin-card" onSubmit={(event) => { event.preventDefault(); if (pin.length === 4 && !busy) onComplete(pin); }}>
         <div className="pin-icon"><LockKeyhole /></div>
+        {stepLabel && <span className="pin-step">{stepLabel}</span>}
         <h1>{title}</h1><p>{hint}</p>
-        <InputOTP maxLength={4} value={pin} onChange={setPin} onComplete={onComplete} inputMode="numeric" aria-label={title}>
+        <InputOTP maxLength={4} value={pin} onChange={updatePin} disabled={busy} inputMode="numeric" aria-label={title}>
           <InputOTPGroup className="otp-group">
             {[0, 1, 2, 3].map((index) => <InputOTPSlot key={index} index={index} className="otp-slot" />)}
           </InputOTPGroup>
         </InputOTP>
         {error && <p className="form-error" role="alert">{error}</p>}
+        {busy && <p className="pin-busy" role="status">{busyLabel}</p>}
         <div className="keypad" aria-label="Ziffernblock">
-          {["1","2","3","4","5","6","7","8","9"].map((digit) => <button key={digit} onClick={() => add(digit)}>{digit}</button>)}
-          <button aria-label="PIN löschen" onClick={() => setPin("")}><RotateCcw /></button>
-          <button onClick={() => add("0")}>0</button>
-          <button aria-label="Letzte Ziffer löschen" onClick={() => setPin((value) => value.slice(0, -1))}>⌫</button>
+          {["1","2","3","4","5","6","7","8","9"].map((digit) => <button type="button" key={digit} onClick={() => add(digit)} disabled={busy}>{digit}</button>)}
+          <button type="button" aria-label="PIN löschen" onClick={() => updatePin("")} disabled={busy}><RotateCcw /></button>
+          <button type="button" onClick={() => add("0")} disabled={busy}>0</button>
+          <button type="button" aria-label="Letzte Ziffer löschen" onClick={() => updatePin(pin.slice(0, -1))} disabled={busy}>⌫</button>
         </div>
-      </div>
+        <div className="pin-actions"><button type="button" className="pin-cancel" onClick={onBack} disabled={busy}><ArrowLeft />{cancelLabel}</button><button type="submit" className="primary-button" disabled={pin.length !== 4 || busy}>{busy ? busyLabel : submitLabel}<ChevronRight /></button></div>
+      </form>
     </div>
   );
 }
 
 function ChoiceGrid({ choices, lang, selected, speaking, onChoose, count = 4 }: { choices: Choice[]; lang: Lang; selected: string | null; speaking: string | null; onChoose: (choice: Choice) => void; count?: number }) {
+  const [page, setPage] = useState(0);
+  const pageCount = Math.max(1, Math.ceil(choices.length / count));
+  const safePage = Math.min(page, pageCount - 1);
+  const start = safePage * count;
+  const visibleChoices = choices.slice(start, start + count);
+  useEffect(() => setPage(0), [choices, count]);
   return (
-    <div className={`choice-grid choice-count-${Math.min(count, choices.length)}`}>
-      {choices.slice(0, count).map((choice, index) => {
-        const Icon = choice.icon;
-        const active = selected === choice.id;
-        return (
-          <button key={choice.id} className={`choice-card ${active ? "selected" : ""} ${speaking === choice.id ? "speaking" : ""}`} onClick={() => onChoose(choice)} aria-pressed={active}>
-            <span className="choice-number">{index + 1}</span>
-            {Icon && <span className="choice-icon"><Icon /></span>}
-            <span>{choice[lang]}</span>
-            {active && <span className="choice-confirm"><Check /> {lang === "de" ? "Noch einmal" : "Tap again"}</span>}
-          </button>
-        );
-      })}
+    <div className="choice-carousel">
+      <div className={`choice-grid choice-count-${Math.min(count, visibleChoices.length)}`}>
+        {visibleChoices.map((choice, index) => {
+          const Icon = choice.icon;
+          const active = selected === choice.id;
+          return (
+            <button key={choice.id} className={`choice-card ${active ? "selected" : ""} ${speaking === choice.id ? "speaking" : ""}`} onClick={() => onChoose(choice)} aria-pressed={active}>
+              <span className="choice-number">{start + index + 1}</span>
+              {Icon && <span className="choice-icon"><Icon /></span>}
+              <span>{choice[lang]}</span>
+              {active && <span className="choice-confirm"><Check /> {lang === "de" ? "Noch einmal" : "Tap again"}</span>}
+            </button>
+          );
+        })}
+      </div>
+      {pageCount > 1 && <nav className="choice-pagination" aria-label={lang === "de" ? "Seiten" : "Pages"}>
+        <button className="choice-page-arrow" onClick={() => setPage((value) => Math.max(0, value - 1))} disabled={safePage === 0} aria-label={lang === "de" ? "Vorherige Seite" : "Previous page"}><ChevronLeft /></button>
+        <div className="choice-page-status"><div>{Array.from({ length: pageCount }, (_, index) => <button key={index} className={safePage === index ? "active" : ""} onClick={() => setPage(index)} aria-label={`${lang === "de" ? "Seite" : "Page"} ${index + 1}`} aria-current={safePage === index ? "page" : undefined} />)}</div><span>{lang === "de" ? "Seite" : "Page"} {safePage + 1} {lang === "de" ? "von" : "of"} {pageCount}</span></div>
+        <button className="choice-page-arrow" onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} disabled={safePage === pageCount - 1} aria-label={lang === "de" ? "Nächste Seite" : "Next page"}><ChevronRight /></button>
+      </nav>}
     </div>
   );
 }
@@ -341,27 +424,68 @@ export function WortnahApp() {
   const [view, setView] = useState<View>("welcome");
   const [role, setRole] = useState<Role | null>(null);
   const [desiredRole, setDesiredRole] = useState<Role>("user");
+  const [pilotProfile, setPilotProfile] = useState<PilotProfileKey | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [member, setMember] = useState<Member | null>(null);
   const [booting, setBooting] = useState(true);
+  const [authBusy, setAuthBusy] = useState(false);
   const [demo, setDemo] = useState(false);
-  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [inviteCode, setInviteCode] = useState("");
-  const [generatedInvite, setGeneratedInvite] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [pinMode, setPinMode] = useState<"create" | "unlock">("unlock");
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [autoReadChoices, setAutoReadChoices] = useState(true);
   const [online, setOnline] = useState(() => typeof navigator === "undefined" ? true : navigator.onLine);
-  const [choiceCount, setChoiceCount] = useState(8);
+  const [adminChoiceMaximum, setAdminChoiceMaximum] = useState(DEFAULT_ADMIN_CHOICE_MAXIMUM);
+  const allowedChoiceCounts = availablePatientChoiceCounts(adminChoiceMaximum);
+  const [choiceCount, setChoiceCount] = useState(() => normalizePatientChoiceCount(8, adminChoiceMaximum));
   const [textScale, setTextScale] = useState(1);
   const [speechRate, setSpeechRate] = useState(0.82);
   const [voicePreference, setVoicePreference] = useState<VoicePreference>("auto");
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const remoteAudio = useRef<HTMLAudioElement | null>(null);
+  const remoteAudioUrl = useRef<string | null>(null);
+  const privateAudioCache = useRef(new Map<string, Blob>());
+  const speechSequenceId = useRef(0);
+  const lastAutoReadKey = useRef("");
   const [messages, setMessages] = useState<AppMessage[]>([]);
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = window.localStorage.getItem("wortnah:search-history");
+      return stored ? JSON.parse(stored) as SearchHistoryItem[] : [];
+    } catch { return []; }
+  });
+  const [searchNodes, setSearchNodes] = useState<InternetSearchNode[]>(fallbackInternetSearchNodes);
+  const [searchPath, setSearchPath] = useState<InternetSearchNode[]>([]);
+  const [selectedSearch, setSelectedSearch] = useState<string | null>(null);
   const [showMissingChoices, setShowMissingChoices] = useState(false);
+  const [customPurposes, setCustomPurposes] = useState<CustomChoice[]>([]);
+  const [customTopics, setCustomTopics] = useState<CustomChoice[]>([]);
+  const [customDetails, setCustomDetails] = useState<CustomChoice[]>([]);
+  const [patientChoicesLoading, setPatientChoicesLoading] = useState(false);
+  const [practiceItems, setPracticeItems] = useState<PracticeItem[]>([]);
+  const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+  const [adminSection, setAdminSection] = useState<AdminSection>("overview");
+  const [contentArea, setContentArea] = useState<ContentArea>("communication");
+  const [contentLevel, setContentLevel] = useState<ChoiceLevel>("detail");
+  const [contentSearch, setContentSearch] = useState("");
+  const [adminChoices, setAdminChoices] = useState<CustomChoice[]>([]);
+  const [adminTopicOptions, setAdminTopicOptions] = useState<CustomChoice[]>([]);
+  const [contentLoading, setContentLoading] = useState(false);
+  const [editingChoice, setEditingChoice] = useState<CustomChoice | null>(null);
+  const [creatingChoice, setCreatingChoice] = useState(false);
+  const [choiceDraft, setChoiceDraft] = useState({ label_de: "", label_en: "", purpose_key: "request", topic_key: "", priority: "medium" as CustomChoice["priority"], practice_eligible: false, is_published: true, sort_order: 1000 });
+  const [adminSearchLevel, setAdminSearchLevel] = useState<1 | 2 | 3 | 4>(1);
+  const [adminSearchNodes, setAdminSearchNodes] = useState<InternetSearchNode[]>(fallbackInternetSearchNodes);
+  const [adminSearchText, setAdminSearchText] = useState("");
+  const [editingSearchNode, setEditingSearchNode] = useState<InternetSearchNode | null>(null);
+  const [creatingSearchNode, setCreatingSearchNode] = useState(false);
+  const [searchDraft, setSearchDraft] = useState({ label_de: "", label_en: "", parent_key: "", query_de: "", query_en: "", is_published: true, sort_order: 1000 });
+  const [editingPractice, setEditingPractice] = useState<PracticeItem | null>(null);
+  const [creatingPractice, setCreatingPractice] = useState(false);
+  const [practiceDraft, setPracticeDraft] = useState({ label_de: "", label_en: "", difficulty: "easy" as PracticeItem["difficulty"], sort_order: 1000 });
   const [usageSummary, setUsageSummary] = useState<UsageSummary>({
     startedAt: null, messagesThisWeek: 0, missingThisWeek: 0, activeDays: 0,
     aiRequests: 0, aiInputTokens: 0, aiOutputTokens: 0, aiCostCents: 0,
@@ -389,6 +513,96 @@ export function WortnahApp() {
     const { data } = await supabase.from("messages").select("id,body_de,body_en,priority,sent_at,sender_profile_id,message_receipts(profile_id,read_at)").eq("space_id", activeMember.space_id).is("archived_at", null).order("sent_at", { ascending: false }).limit(50);
     if (data) setMessages(data as AppMessage[]);
   }, [demo, member]);
+
+  const loadPatientChoices = useCallback(async (level: ChoiceLevel, purposeKey?: string, topicKey?: string) => {
+    if (!member || demo) return [] as CustomChoice[];
+    let query = supabase
+      .from("communication_custom_choices")
+      .select("id,option_key,choice_level,purpose_key,topic_key,label_de,label_en,is_published,practice_eligible,priority,sort_order")
+      .eq("space_id", member.space_id)
+      .eq("choice_level", level)
+      .eq("is_published", true)
+      .order("sort_order", { ascending: true })
+      .limit(120);
+    if (purposeKey) query = query.eq("purpose_key", purposeKey);
+    if (topicKey) query = query.eq("topic_key", topicKey);
+    const { data } = await query;
+    return (data ?? []) as CustomChoice[];
+  }, [demo, member]);
+
+  const loadPracticeItems = useCallback(async () => {
+    if (!member || demo) return;
+    const { data } = await supabase
+      .from("communication_practice_items")
+      .select("id,source_key,label_de,label_en,difficulty,sort_order")
+      .eq("space_id", member.space_id)
+      .order("sort_order", { ascending: true })
+      .limit(200);
+    if (data) setPracticeItems(data as PracticeItem[]);
+  }, [demo, member]);
+
+  const loadSearchNodes = useCallback(async () => {
+    if (!member || demo) return;
+    const { data, error: searchError } = await supabase
+      .from("internet_search_choices")
+      .select("id,option_key,parent_key,search_level,label_de,label_en,query_de,query_en,is_published,sort_order")
+      .eq("space_id", member.space_id)
+      .eq("is_published", true)
+      .order("search_level", { ascending: true })
+      .order("sort_order", { ascending: true })
+      .limit(300);
+    if (!searchError && data?.length) setSearchNodes(data as InternetSearchNode[]);
+  }, [demo, member]);
+
+  const loadAdminChoices = useCallback(async () => {
+    if (!member || demo || role !== "companion") return;
+    setContentLoading(true);
+    let query = supabase
+      .from("communication_custom_choices")
+      .select("id,option_key,choice_level,purpose_key,topic_key,label_de,label_en,is_published,practice_eligible,priority,sort_order")
+      .eq("space_id", member.space_id)
+      .eq("choice_level", contentLevel)
+      .order("sort_order", { ascending: true })
+      .limit(240);
+    if (contentSearch.trim()) query = query.ilike("label_de", `%${contentSearch.trim()}%`);
+    const { data, error: loadError } = await query;
+    if (loadError) setError(t.saveError);
+    else setAdminChoices((data ?? []) as CustomChoice[]);
+    setContentLoading(false);
+  }, [contentLevel, contentSearch, demo, member, role, t.saveError]);
+
+  const loadAdminTaxonomy = useCallback(async () => {
+    if (!member || demo || role !== "companion") return;
+    const { data } = await supabase
+      .from("communication_custom_choices")
+      .select("id,option_key,choice_level,purpose_key,topic_key,label_de,label_en,is_published,practice_eligible,priority,sort_order")
+      .eq("space_id", member.space_id)
+      .eq("choice_level", "topic")
+      .order("sort_order", { ascending: true })
+      .limit(240);
+    if (data) setAdminTopicOptions(data as CustomChoice[]);
+  }, [demo, member, role]);
+
+  const loadAdminSearchNodes = useCallback(async () => {
+    if (!member || demo || role !== "companion") return;
+    setContentLoading(true);
+    const { data, error: loadError } = await supabase
+      .from("internet_search_choices")
+      .select("id,option_key,parent_key,search_level,label_de,label_en,query_de,query_en,is_published,sort_order")
+      .eq("space_id", member.space_id)
+      .order("search_level", { ascending: true })
+      .order("sort_order", { ascending: true })
+      .limit(300);
+    if (loadError) setError(t.saveError);
+    else if (data) setAdminSearchNodes(data as InternetSearchNode[]);
+    setContentLoading(false);
+  }, [demo, member, role, t.saveError]);
+
+  const loadActivityEvents = useCallback(async () => {
+    if (!member || demo || role !== "companion") return;
+    const { data } = await supabase.from("interaction_events").select("id,event_type,screen_key,occurred_at,profile_id,metadata").eq("space_id", member.space_id).order("occurred_at", { ascending: false }).limit(120);
+    if (data) setActivityEvents(data as ActivityEvent[]);
+  }, [demo, member, role]);
 
   const loadUsageSummary = useCallback(async (activeMember: Member | null = member) => {
     if (!activeMember) return;
@@ -469,20 +683,83 @@ export function WortnahApp() {
   useEffect(() => {
     if (!member || demo) return;
     supabase.from("profile_preferences")
-      .select("speech_enabled,speech_rate,voice_name,choice_count,text_scale")
+      .select("speech_enabled,auto_read_choices,speech_rate,voice_name,choice_count,text_scale")
       .eq("profile_id", member.profile_id)
       .maybeSingle()
       .then(({ data }) => {
         if (!data) return;
         setAudioEnabled(data.speech_enabled);
+        setAutoReadChoices(data.auto_read_choices);
         setSpeechRate(Number(data.speech_rate));
-        setChoiceCount(data.choice_count);
+        setChoiceCount(normalizePatientChoiceCount(data.choice_count, adminChoiceMaximum));
         setTextScale(Number(data.text_scale) / 1.3);
         if (data.voice_name === "wortnah:female") setVoicePreference("female");
         else if (data.voice_name === "wortnah:male") setVoicePreference("male");
         else setVoicePreference("auto");
       });
-  }, [member, demo]);
+  }, [adminChoiceMaximum, member, demo]);
+
+  useEffect(() => {
+    if (!member || demo) return;
+    supabase.from("space_settings").select("visible_topic_count").eq("space_id", member.space_id).maybeSingle().then(({ data }) => {
+      if (data?.visible_topic_count) setAdminChoiceMaximum(normalizePatientChoiceCount(data.visible_topic_count, DEFAULT_ADMIN_CHOICE_MAXIMUM));
+    });
+  }, [demo, member]);
+
+  useEffect(() => {
+    try { window.localStorage.setItem("wortnah:search-history", JSON.stringify(searchHistory)); } catch { /* device-local history is optional */ }
+  }, [searchHistory]);
+
+  useEffect(() => {
+    if (!member || demo) return;
+    void loadPatientChoices("purpose").then(setCustomPurposes);
+  }, [demo, loadPatientChoices, member]);
+
+  useEffect(() => {
+    if (!purpose || !member || demo) return;
+    void loadPatientChoices("topic", purpose.id).then(setCustomTopics).finally(() => setPatientChoicesLoading(false));
+  }, [demo, loadPatientChoices, member, purpose]);
+
+  useEffect(() => {
+    if (!purpose || !topic || !member || demo) return;
+    void loadPatientChoices("detail", purpose.id, topic.id).then(setCustomDetails).finally(() => setPatientChoicesLoading(false));
+  }, [demo, loadPatientChoices, member, purpose, topic]);
+
+  useEffect(() => {
+    if (!member || demo || (view !== "practice" && adminSection !== "practice")) return;
+    const task = window.setTimeout(() => void loadPracticeItems(), 0);
+    return () => window.clearTimeout(task);
+  }, [adminSection, demo, loadPracticeItems, member, view]);
+
+  useEffect(() => {
+    if (!member || demo || view !== "search") return;
+    const task = window.setTimeout(() => void loadSearchNodes(), 0);
+    return () => window.clearTimeout(task);
+  }, [demo, loadSearchNodes, member, view]);
+
+  useEffect(() => {
+    if (view !== "admin" || adminSection !== "content" || contentArea !== "communication") return;
+    const task = window.setTimeout(() => void loadAdminChoices(), 180);
+    return () => window.clearTimeout(task);
+  }, [adminSection, contentArea, contentLevel, contentSearch, loadAdminChoices, view]);
+
+  useEffect(() => {
+    if (view !== "admin" || adminSection !== "content" || contentArea !== "communication") return;
+    const task = window.setTimeout(() => void loadAdminTaxonomy(), 0);
+    return () => window.clearTimeout(task);
+  }, [adminSection, contentArea, loadAdminTaxonomy, view]);
+
+  useEffect(() => {
+    if (view !== "admin" || adminSection !== "content" || contentArea !== "search") return;
+    const task = window.setTimeout(() => void loadAdminSearchNodes(), 0);
+    return () => window.clearTimeout(task);
+  }, [adminSection, contentArea, loadAdminSearchNodes, view]);
+
+  useEffect(() => {
+    if (view !== "admin" || adminSection !== "activity") return;
+    const task = window.setTimeout(() => void loadActivityEvents(), 0);
+    return () => window.clearTimeout(task);
+  }, [adminSection, loadActivityEvents, view]);
 
   useEffect(() => {
     if (!member || (view !== "messages" && view !== "admin")) return;
@@ -496,8 +773,9 @@ export function WortnahApp() {
     return () => window.clearTimeout(task);
   }, [member, view, loadUsageSummary]);
 
-  const speak = useCallback((text: string, id?: string) => {
+  const speakWithDevice = useCallback((text: string, id?: string) => {
     if (!audioEnabled || !("speechSynthesis" in window)) return;
+    speechSequenceId.current += 1;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang === "de" ? "de-DE" : "en-GB";
@@ -519,6 +797,82 @@ export function WortnahApp() {
     window.speechSynthesis.speak(utterance);
   }, [audioEnabled, lang, speechRate, availableVoices, voicePreference]);
 
+  const speak = useCallback((text: string, id?: string) => {
+    if (!audioEnabled) return;
+    const sequenceId = speechSequenceId.current + 1;
+    speechSequenceId.current = sequenceId;
+    window.speechSynthesis?.cancel();
+    const player = remoteAudio.current ?? new Audio();
+    player.pause();
+    player.onplay = null;
+    player.onended = null;
+    player.onerror = null;
+    remoteAudio.current = player;
+    player.preload = "auto";
+    player.setAttribute("playsinline", "");
+
+    // Prime this reusable element during the tap so iOS can play the MP3 after the private fetch completes.
+    if (!player.src) {
+      player.volume = 0;
+      player.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAACAgICA";
+      void player.play().catch(() => undefined);
+    }
+
+    let fallbackStarted = false;
+    const fallbackToDevice = () => {
+      if (fallbackStarted || speechSequenceId.current !== sequenceId) return;
+      fallbackStarted = true;
+      speakWithDevice(text, id);
+    };
+    if (!member || demo || lang !== "de" || voicePreference === "male" || !session?.access_token) {
+      fallbackToDevice();
+      return;
+    }
+
+    const cacheKey = `${member.space_id}:${text.trim().toLocaleLowerCase("de-DE")}`;
+    const playPrivateAudio = (blob: Blob) => {
+      if (speechSequenceId.current !== sequenceId) return;
+      if (remoteAudioUrl.current) URL.revokeObjectURL(remoteAudioUrl.current);
+      const objectUrl = URL.createObjectURL(blob);
+      remoteAudioUrl.current = objectUrl;
+      player.pause();
+      player.src = objectUrl;
+      player.volume = 1;
+      player.onplay = () => setSpeaking(id ?? "message");
+      const releaseObjectUrl = () => {
+        if (remoteAudioUrl.current === objectUrl) remoteAudioUrl.current = null;
+        URL.revokeObjectURL(objectUrl);
+      };
+      player.onended = () => { releaseObjectUrl(); setSpeaking(null); };
+      player.onerror = () => { releaseObjectUrl(); setSpeaking(null); fallbackToDevice(); };
+      void player.play().catch(() => { releaseObjectUrl(); fallbackToDevice(); });
+    };
+    const cachedAudio = privateAudioCache.current.get(cacheKey);
+    if (cachedAudio) {
+      playPrivateAudio(cachedAudio);
+      return;
+    }
+
+    void requestPrivateVoiceAudio({
+      functionUrl: `${supabaseUrl}/functions/v1/wortnah-audio`,
+      accessToken: session.access_token,
+      publishableKey: supabasePublishableKey,
+      spaceId: member.space_id,
+      text,
+    }).then((result) => {
+      if (result.kind !== "audio") {
+        fallbackToDevice();
+        return;
+      }
+      if (privateAudioCache.current.size >= 24) {
+        const oldestKey = privateAudioCache.current.keys().next().value;
+        if (oldestKey) privateAudioCache.current.delete(oldestKey);
+      }
+      privateAudioCache.current.set(cacheKey, result.blob);
+      playPrivateAudio(result.blob);
+    }).catch(() => fallbackToDevice());
+  }, [audioEnabled, demo, lang, member, session, speakWithDevice, voicePreference]);
+
   const logInteraction = useCallback(async (eventType: "screen_view" | "choice_preview" | "choice_confirm" | "choice_repeat" | "back" | "audio_toggle" | "practice_started" | "practice_completed", screenKey: string, metadata: Record<string, unknown> = {}) => {
     if (!member || demo) return;
     await supabase.from("interaction_events").insert({
@@ -532,13 +886,107 @@ export function WortnahApp() {
   }, [choiceCount, demo, member]);
 
   const currentChoices = useMemo(() => {
-    if (commStep === "purpose") return purposes;
-    if (commStep === "topic") return topicsByPurpose[purpose?.id ?? "tell"];
-    if (commStep === "detail") return getDetails(purpose?.id ?? "tell", topic?.id ?? "my_day");
+    const toChoice = (item: CustomChoice): Choice => ({ id: item.option_key, de: item.label_de, en: item.label_en || item.label_de });
+    if (commStep === "purpose") {
+      const known = new Set(purposes.map((item) => item.id));
+      return [...purposes, ...customPurposes.filter((item) => !known.has(item.option_key)).map(toChoice)];
+    }
+    if (commStep === "topic") {
+      if (patientChoicesLoading) return [];
+      if (customTopics.length) return customTopics.map(toChoice);
+      return topicsByPurpose[purpose?.id ?? "tell"] ?? [];
+    }
+    if (commStep === "detail") {
+      if (patientChoicesLoading) return [];
+      if (customDetails.length) return customDetails.map(toChoice);
+      return getDetails(purpose?.id ?? "tell", topic?.id ?? "my_day");
+    }
     return [];
-  }, [commStep, purpose, topic]);
+  }, [commStep, customDetails, customPurposes, customTopics, patientChoicesLoading, purpose, topic]);
 
-  useEffect(() => () => window.speechSynthesis?.cancel(), [view, commStep]);
+  const currentSearchNodes = useMemo(
+    () => childrenOf(searchNodes, searchPath.at(-1)?.option_key ?? null),
+    [searchNodes, searchPath],
+  );
+  const currentSearchChoices = useMemo<Choice[]>(
+    () => currentSearchNodes.map((node) => ({
+      id: node.option_key,
+      de: node.label_de,
+      en: node.label_en || node.label_de,
+      icon: searchNodeIcon(node),
+    })),
+    [currentSearchNodes],
+  );
+
+  const readChoiceSequence = useCallback((intro: string, choices: Choice[]) => {
+    if (!audioEnabled || !("speechSynthesis" in window) || !choices.length) return;
+    const sequenceId = speechSequenceId.current + 1;
+    speechSequenceId.current = sequenceId;
+    window.speechSynthesis.cancel();
+    const locale = lang === "de" ? "de-DE" : "en-GB";
+    const matchingVoices = availableVoices.filter((voice) => voice.lang.replace("_", "-").toLowerCase() === locale.toLowerCase());
+    const femaleNames = /(anna|katja|helena|marlene|petra|vicki|victoria|amelie|seraphina|sophie|female)/i;
+    const maleNames = /(markus|martin|conrad|hans|stefan|thomas|daniel|male)/i;
+    const preferredPattern = voicePreference === "female" ? femaleNames : voicePreference === "male" ? maleNames : null;
+    const selectedVoice = (preferredPattern && matchingVoices.find((voice) => preferredPattern.test(voice.name)))
+      || matchingVoices.find((voice) => voice.default)
+      || matchingVoices[0];
+    const items = [{ id: "page", text: intro }, ...choices.map((choice, index) => ({ id: choice.id, text: `${index + 1}. ${choice[lang]}` }))];
+    const readNext = (index: number) => {
+      if (speechSequenceId.current !== sequenceId || index >= items.length) { setSpeaking(null); return; }
+      const item = items[index];
+      const utterance = new SpeechSynthesisUtterance(item.text);
+      utterance.lang = locale;
+      utterance.rate = speechRate;
+      if (selectedVoice) utterance.voice = selectedVoice;
+      utterance.onstart = () => setSpeaking(item.id);
+      utterance.onend = () => readNext(index + 1);
+      utterance.onerror = () => readNext(index + 1);
+      window.speechSynthesis.speak(utterance);
+    };
+    readNext(0);
+  }, [audioEnabled, availableVoices, lang, speechRate, voicePreference]);
+
+  useEffect(() => {
+    speechSequenceId.current += 1;
+    window.speechSynthesis?.cancel();
+    if (!autoReadChoices || !audioEnabled || patientChoicesLoading) { lastAutoReadKey.current = ""; return; }
+    let intro = "";
+    let choices: Choice[] = [];
+    if (view === "home") {
+      intro = t.whatDo;
+      choices = [
+        { id: "home_communicate", de: copy.de.communicate, en: copy.en.communicate },
+        { id: "home_search", de: copy.de.search, en: copy.en.search },
+        { id: "home_practice", de: copy.de.practice, en: copy.en.practice },
+        { id: "home_messages", de: copy.de.messages, en: copy.en.messages },
+      ];
+    } else if (view === "search") {
+      const levelLabel = searchPath.length
+        ? (lang === "de" ? "Wählen Sie den nächsten Schritt." : "Choose the next step.")
+        : t.search;
+      intro = `${levelLabel} ${t.firstTap}`;
+      choices = currentSearchChoices.slice(0, choiceCount);
+    } else if (view === "communicate" && ["purpose", "topic", "detail"].includes(commStep)) {
+      intro = `${commStep === "purpose" ? t.choosePurpose : commStep === "topic" ? t.chooseTopic : t.chooseDetail}. ${t.firstTap}`;
+      choices = currentChoices.slice(0, choiceCount);
+    }
+    if (!choices.length) { lastAutoReadKey.current = ""; return; }
+    const key = `${view}:${commStep}:${lang}:${choiceCount}:${choices.map((choice) => choice.id).join(",")}`;
+    if (lastAutoReadKey.current === key) return;
+    lastAutoReadKey.current = key;
+    const task = window.setTimeout(() => readChoiceSequence(intro, choices), 450);
+    return () => window.clearTimeout(task);
+  }, [audioEnabled, autoReadChoices, choiceCount, commStep, currentChoices, currentSearchChoices, lang, patientChoicesLoading, readChoiceSequence, searchPath.length, t, view]);
+
+  useEffect(() => () => {
+    speechSequenceId.current += 1;
+    window.speechSynthesis?.cancel();
+    remoteAudio.current?.pause();
+    remoteAudio.current = null;
+    if (remoteAudioUrl.current) URL.revokeObjectURL(remoteAudioUrl.current);
+    remoteAudioUrl.current = null;
+  }, [view, commStep]);
 
   useEffect(() => {
     if (!member || demo) return;
@@ -552,21 +1000,46 @@ export function WortnahApp() {
     setCommStep("purpose"); setPurpose(null); setTopic(null); setDetail(null); setPriority("normal"); setSelected(null); setStatus(""); setShowMissingChoices(false);
   };
 
-  const openHome = () => { resetCommunication(); setView(role === "companion" ? "admin" : "home"); };
+  const openHome = () => {
+    resetCommunication();
+    setSearchPath([]);
+    setSelectedSearch(null);
+    setView(role === "companion" ? "admin" : "home");
+  };
 
-  const handleAuth = async () => {
-    setError(""); setStatus("");
-    if (!email || password.length < 8) { setError(lang === "de" ? "Bitte geben Sie eine E-Mail und ein Passwort mit mindestens 8 Zeichen ein." : "Enter an email and a password of at least 8 characters."); return; }
-    const result = authMode === "signup"
-      ? await supabase.auth.signUp({ email, password, options: { data: { display_name: desiredRole === "user" ? "Mein Bereich" : "Begleitung", preferred_language: lang, initial_role: desiredRole } } })
-      : await supabase.auth.signInWithPassword({ email, password });
-    if (result.error) { setError(result.error.message); return; }
-    if (!result.data.session) { setStatus(t.checkEmail); return; }
-    setSession(result.data.session);
-    const current = await getMembership(result.data.session.user.id);
-    if (current) {
-      setMember(current); setRole(current.role); setPinMode("create"); setView("pin");
-    } else setView("onboarding");
+  const handlePilotLogin = async (pin: string) => {
+    if (!pilotProfile || authBusy) return;
+    setAuthBusy(true);
+    setError("");
+    try {
+      const { data, error: loginError } = await supabase.functions.invoke("pilot-login", {
+        body: { profile: pilotProfile, pin },
+      });
+      if (loginError || !data?.token_hash) {
+        setError(data?.error ?? (lang === "de" ? "Zugangscode nicht korrekt oder kurzzeitig gesperrt." : "Access code is incorrect or temporarily locked."));
+        return;
+      }
+      const { data: authData, error: verifyError } = await supabase.auth.verifyOtp({
+        token_hash: data.token_hash,
+        type: "magiclink",
+      });
+      if (verifyError || !authData.session?.user) {
+        setError(t.saveError);
+        return;
+      }
+      const activeMember = await getMembership(authData.session.user.id);
+      if (!activeMember) {
+        setError(t.saveError);
+        return;
+      }
+      setSession(authData.session);
+      setMember(activeMember);
+      setRole(activeMember.role);
+      setPinMode("unlock");
+      setView("pin");
+    } finally {
+      setAuthBusy(false);
+    }
   };
 
   const setupCompanion = async () => {
@@ -586,26 +1059,59 @@ export function WortnahApp() {
   };
 
   const handlePin = async (pin: string) => {
+    if (authBusy) return;
+    setAuthBusy(true);
     setError("");
-    if (demo) {
-      if (pin !== "2468") { setError(t.wrongPin); return; }
-      setView(role === "companion" ? "admin" : "home"); return;
-    }
-    if (pinMode === "create") {
-      const { error: pinError } = await supabase.rpc("set_access_pin", { p_pin: pin });
-      if (pinError) { setError(t.saveError); return; }
+    try {
+      if (demo) {
+        if (pin !== "2468") { setError(t.wrongPin); return; }
+        setView(role === "companion" ? "admin" : "home"); return;
+      }
+      if (pinMode === "create") {
+        const { error: pinError } = await supabase.rpc("set_access_pin", { p_pin: pin });
+        if (pinError) { setError(t.saveError); return; }
+        setView(role === "companion" ? "admin" : "home");
+        return;
+      }
+      const { data, error: verifyError } = await supabase.rpc("verify_access_pin", { p_pin: pin });
+      if (verifyError || !data) { setError(t.wrongPin); return; }
       setView(role === "companion" ? "admin" : "home");
-      return;
+    } finally {
+      setAuthBusy(false);
     }
-    const { data, error: verifyError } = await supabase.rpc("verify_access_pin", { p_pin: pin });
-    if (verifyError || !data) { setError(t.wrongPin); return; }
-    setView(role === "companion" ? "admin" : "home");
   };
 
-  const openDemo = (demoRole: Role) => {
-    setDemo(true); setRole(demoRole); setDesiredRole(demoRole); setPinMode("unlock"); setError(""); setView("pin");
-    setMember({ space_id: "demo", profile_id: demoRole, role: demoRole, label: demoRole === "user" ? t.user : t.companion });
-    setMessages([{ id: "demo-message", body_de: "Bitte bring mir etwas zu trinken.", body_en: "Please bring me something to drink.", priority: "important", sent_at: new Date(Date.now() - 8 * 60000).toISOString(), sender_profile_id: "user", message_receipts: [] }]);
+  const chooseSearch = (choice: Choice) => {
+    const node = currentSearchNodes.find((item) => item.option_key === choice.id);
+    if (!node) return;
+    if (selectedSearch !== choice.id) {
+      setSelectedSearch(choice.id);
+      void logInteraction("choice_preview", "internet_search", { choice_id: choice.id, level: node.search_level });
+      const preview = lang === "de" ? node.query_de || node.label_de : node.query_en || node.label_en || node.label_de;
+      if (node.query_de) speak(preview, `search-${choice.id}`);
+      else speakWithDevice(preview, `search-${choice.id}`);
+      return;
+    }
+    setSelectedSearch(null);
+    const nextNodes = childrenOf(searchNodes, node.option_key);
+    void logInteraction("choice_confirm", "internet_search", { choice_id: choice.id, level: node.search_level });
+    if (nextNodes.length) {
+      setSearchPath((path) => [...path, node]);
+      return;
+    }
+    const query = lang === "de" ? node.query_de || node.label_de : node.query_en || node.label_en || node.label_de;
+    const entry = { id: crypto.randomUUID(), text: query, createdAt: new Date().toISOString() };
+    setSearchHistory((items) => [entry, ...items.filter((item) => item.text !== entry.text)].slice(0, 12));
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank", "noopener,noreferrer");
+  };
+
+  const searchBack = () => {
+    setSelectedSearch(null);
+    if (searchPath.length) {
+      setSearchPath((path) => path.slice(0, -1));
+      return;
+    }
+    openHome();
   };
 
   const chooseCommunication = (choice: Choice) => {
@@ -617,8 +1123,8 @@ export function WortnahApp() {
     }
     setSelected(null);
     void logInteraction("choice_confirm", `communicate_${commStep}`, { choice_id: choice.id, purpose_id: purpose?.id ?? null, topic_id: topic?.id ?? null });
-    if (commStep === "purpose") { setPurpose(choice); setCommStep("topic"); }
-    else if (commStep === "topic") { setTopic(choice); setCommStep("detail"); }
+    if (commStep === "purpose") { if (!demo) setPatientChoicesLoading(true); setCustomTopics([]); setPurpose(choice); setCommStep("topic"); }
+    else if (commStep === "topic") { if (!demo) setPatientChoicesLoading(true); setCustomDetails([]); setTopic(choice); setCommStep("detail"); }
     else if (commStep === "detail") { setDetail(choice); setCommStep("review"); speak(choice[lang]); }
   };
 
@@ -634,19 +1140,20 @@ export function WortnahApp() {
       return;
     }
     if (!member) return;
+    const isSearchReport = view === "search";
     await supabase.from("interaction_events").insert({
       space_id: member.space_id,
       profile_id: member.profile_id,
       event_type: "help_requested",
-      screen_key: `communicate_${commStep}`,
-      choice_count: commStep === "purpose" ? 4 : choiceCount,
+      screen_key: isSearchReport ? "internet_search" : `communicate_${commStep}`,
+      choice_count: choiceCount,
       metadata: {
         reason: "missing_option",
         missing_type: missingType,
-        purpose_id: purpose?.id ?? null,
-        topic_id: topic?.id ?? null,
-        selected_choice_id: selected,
-        visible_option_ids: currentChoices.slice(0, commStep === "purpose" ? 4 : choiceCount).map((choice) => choice.id),
+        purpose_id: isSearchReport ? null : purpose?.id ?? null,
+        topic_id: isSearchReport ? null : topic?.id ?? null,
+        selected_choice_id: isSearchReport ? selectedSearch : selected,
+        visible_option_ids: (isSearchReport ? currentSearchChoices : currentChoices).slice(0, choiceCount).map((choice) => choice.id),
       },
     });
   };
@@ -669,20 +1176,12 @@ export function WortnahApp() {
       setCommStep("success"); return;
     }
     const { data, error: sendError } = await supabase.from("messages").insert({
-      space_id: member.space_id, sender_profile_id: member.profile_id, purpose_node_id: purposeIds[purpose.id], topic_node_id: topicIds[topic.id] ?? null,
+      space_id: member.space_id, sender_profile_id: member.profile_id, purpose_node_id: purposeIds[purpose.id] ?? null, topic_node_id: topicIds[topic.id] ?? null,
       content_type: "text", body_de: detail.de, body_en: detail.en, priority,
     }).select("id").single();
     if (sendError || !data) { setError(t.saveError); return; }
     await supabase.from("interaction_events").insert({ space_id: member.space_id, profile_id: member.profile_id, event_type: "message_sent", screen_key: "message_success", choice_count: choiceCount, metadata: { purpose_id: purpose.id, topic_id: topic.id, priority } });
     setCommStep("success");
-  };
-
-  const createInvite = async () => {
-    setError("");
-    if (demo) { setGeneratedInvite("WORT2468"); return; }
-    const { data, error: inviteError } = await supabase.rpc("create_user_invite");
-    if (inviteError || !data) { setError(inviteError?.message ?? t.saveError); return; }
-    setGeneratedInvite(data);
   };
 
   const markRead = async (message: AppMessage) => {
@@ -699,20 +1198,236 @@ export function WortnahApp() {
     await supabase.from("profile_preferences").update({ ...patch, updated_by: member.profile_id }).eq("profile_id", member.profile_id);
   };
 
+  const saveAdminChoiceMaximum = async (count: PatientChoiceCount) => {
+    if (!member || role !== "companion") return;
+    const { error: updateError } = await supabase.from("space_settings").update({ visible_topic_count: count, updated_by: member.profile_id }).eq("space_id", member.space_id);
+    if (updateError) { setError(t.saveError); return; }
+    setAdminChoiceMaximum(count);
+    setChoiceCount((current) => normalizePatientChoiceCount(current, count));
+  };
+
+  const startChoiceEditor = (item?: CustomChoice) => {
+    setError("");
+    setEditingChoice(item ?? null);
+    setCreatingChoice(!item);
+    setChoiceDraft(item ? {
+      label_de: item.label_de,
+      label_en: item.label_en,
+      purpose_key: item.purpose_key ?? "request",
+      topic_key: item.topic_key ?? "",
+      priority: item.priority,
+      practice_eligible: item.practice_eligible,
+      is_published: item.is_published,
+      sort_order: item.sort_order,
+    } : { label_de: "", label_en: "", purpose_key: "request", topic_key: "", priority: "medium", practice_eligible: false, is_published: true, sort_order: 1000 });
+  };
+
+  const closeChoiceEditor = () => { setEditingChoice(null); setCreatingChoice(false); setError(""); };
+
+  const saveChoice = async () => {
+    if (!member || !choiceDraft.label_de.trim()) { setError(lang === "de" ? "Bitte deutschen Text eingeben." : "Enter German text."); return; }
+    const payload = {
+      label_de: choiceDraft.label_de.trim(),
+      label_en: choiceDraft.label_en.trim(),
+      choice_level: contentLevel,
+      purpose_key: contentLevel === "purpose" ? null : choiceDraft.purpose_key || null,
+      topic_key: contentLevel === "detail" ? choiceDraft.topic_key || null : null,
+      priority: choiceDraft.priority,
+      practice_eligible: contentLevel === "detail" && choiceDraft.practice_eligible,
+      is_published: choiceDraft.is_published,
+      sort_order: Number(choiceDraft.sort_order) || 1000,
+    };
+    if (contentLevel === "detail" && !payload.topic_key) { setError(lang === "de" ? "Bitte einen Themen-Schlüssel eingeben." : "Enter a topic key."); return; }
+    const result = editingChoice
+      ? await supabase.from("communication_custom_choices").update(payload).eq("id", editingChoice.id)
+      : await supabase.from("communication_custom_choices").insert({
+          ...payload,
+          space_id: member.space_id,
+          created_by: member.profile_id,
+          option_key: `admin_${contentLevel}_${crypto.randomUUID().replaceAll("-", "")}`,
+          source_name: "Wortnah Admin",
+        });
+    if (result.error) { setError(result.error.message); return; }
+    closeChoiceEditor();
+    await loadAdminChoices();
+  };
+
+  const toggleChoicePublished = async (item: CustomChoice) => {
+    const { error: updateError } = await supabase.from("communication_custom_choices").update({ is_published: !item.is_published }).eq("id", item.id);
+    if (updateError) { setError(t.saveError); return; }
+    setAdminChoices((items) => items.map((entry) => entry.id === item.id ? { ...entry, is_published: !entry.is_published } : entry));
+  };
+
+  const moveChoice = async (item: CustomChoice, direction: -1 | 1) => {
+    if (contentSearch.trim()) return;
+    const currentIndex = adminChoices.findIndex((entry) => entry.id === item.id);
+    const other = adminChoices[currentIndex + direction];
+    if (currentIndex < 0 || !other) return;
+    const currentOrder = item.sort_order;
+    const otherOrder = other.sort_order;
+    const [currentResult, otherResult] = await Promise.all([
+      supabase.from("communication_custom_choices").update({ sort_order: otherOrder }).eq("id", item.id),
+      supabase.from("communication_custom_choices").update({ sort_order: currentOrder }).eq("id", other.id),
+    ]);
+    if (currentResult.error || otherResult.error) { setError(t.saveError); return; }
+    await loadAdminChoices();
+  };
+
+  const deleteChoice = async (item: CustomChoice) => {
+    const confirmed = window.confirm(lang === "de" ? `„${item.label_de}“ dauerhaft löschen?` : `Permanently delete “${item.label_de}”?`);
+    if (!confirmed) return;
+    const { error: deleteError } = await supabase.from("communication_custom_choices").delete().eq("id", item.id);
+    if (deleteError) { setError(t.saveError); return; }
+    setAdminChoices((items) => items.filter((entry) => entry.id !== item.id));
+  };
+
+  const startSearchEditor = (item?: InternetSearchNode) => {
+    setError("");
+    setEditingSearchNode(item ?? null);
+    setCreatingSearchNode(!item);
+    setSearchDraft(item ? {
+      label_de: item.label_de,
+      label_en: item.label_en,
+      parent_key: item.parent_key ?? "",
+      query_de: item.query_de ?? "",
+      query_en: item.query_en ?? "",
+      is_published: item.is_published,
+      sort_order: item.sort_order,
+    } : { label_de: "", label_en: "", parent_key: "", query_de: "", query_en: "", is_published: true, sort_order: 1000 });
+  };
+
+  const closeSearchEditor = () => { setEditingSearchNode(null); setCreatingSearchNode(false); setError(""); };
+
+  const saveSearchNode = async () => {
+    if (!member || !searchDraft.label_de.trim()) { setError(lang === "de" ? "Bitte deutschen Text eingeben." : "Enter German text."); return; }
+    if (adminSearchLevel > 1 && !searchDraft.parent_key) { setError(lang === "de" ? "Bitte den übergeordneten Bereich wählen." : "Choose the parent section."); return; }
+    const payload = {
+      parent_key: adminSearchLevel === 1 ? null : searchDraft.parent_key,
+      search_level: adminSearchLevel,
+      label_de: searchDraft.label_de.trim(),
+      label_en: searchDraft.label_en.trim(),
+      query_de: searchDraft.query_de.trim() || null,
+      query_en: searchDraft.query_en.trim() || null,
+      is_published: searchDraft.is_published,
+      sort_order: Number(searchDraft.sort_order) || 1000,
+    };
+    const result = editingSearchNode
+      ? await supabase.from("internet_search_choices").update(payload).eq("id", editingSearchNode.id)
+      : await supabase.from("internet_search_choices").insert({
+          ...payload,
+          space_id: member.space_id,
+          created_by: member.profile_id,
+          option_key: `admin-${crypto.randomUUID()}`,
+        });
+    if (result.error) { setError(result.error.message); return; }
+    closeSearchEditor();
+    await loadAdminSearchNodes();
+  };
+
+  const toggleSearchPublished = async (item: InternetSearchNode) => {
+    const { error: updateError } = await supabase.from("internet_search_choices").update({ is_published: !item.is_published }).eq("id", item.id);
+    if (updateError) { setError(t.saveError); return; }
+    setAdminSearchNodes((items) => items.map((entry) => entry.id === item.id ? { ...entry, is_published: !entry.is_published } : entry));
+    setSearchNodes((items) => items.map((entry) => entry.id === item.id ? { ...entry, is_published: !entry.is_published } : entry));
+  };
+
+  const deleteSearchNode = async (item: InternetSearchNode) => {
+    const confirmed = window.confirm(lang === "de" ? `„${item.label_de}“ und untergeordnete Einträge dauerhaft löschen?` : `Permanently delete “${item.label_de}” and its children?`);
+    if (!confirmed) return;
+    const { error: deleteError } = await supabase.from("internet_search_choices").delete().eq("id", item.id);
+    if (deleteError) { setError(t.saveError); return; }
+    await loadAdminSearchNodes();
+  };
+
+  const startPracticeEditor = (item?: PracticeItem) => {
+    setError("");
+    setEditingPractice(item ?? null);
+    setCreatingPractice(!item);
+    setPracticeDraft(item ? { label_de: item.label_de, label_en: item.label_en, difficulty: item.difficulty, sort_order: item.sort_order } : { label_de: "", label_en: "", difficulty: "easy", sort_order: 1000 });
+  };
+
+  const closePracticeEditor = () => { setEditingPractice(null); setCreatingPractice(false); setError(""); };
+
+  const savePracticeItem = async () => {
+    if (!member || !practiceDraft.label_de.trim()) { setError(lang === "de" ? "Bitte einen Übungstext eingeben." : "Enter practice text."); return; }
+    const payload = { label_de: practiceDraft.label_de.trim(), label_en: practiceDraft.label_en.trim(), difficulty: practiceDraft.difficulty, sort_order: Number(practiceDraft.sort_order) || 1000 };
+    const result = editingPractice
+      ? await supabase.from("communication_practice_items").update(payload).eq("id", editingPractice.id)
+      : await supabase.from("communication_practice_items").insert({ ...payload, space_id: member.space_id, created_by: member.profile_id, source_key: `admin_practice_${crypto.randomUUID().replaceAll("-", "")}`, source_name: "Wortnah Admin" });
+    if (result.error) { setError(result.error.message); return; }
+    closePracticeEditor();
+    await loadPracticeItems();
+  };
+
+  const deletePracticeItem = async (item: PracticeItem) => {
+    const confirmed = window.confirm(lang === "de" ? `„${item.label_de}“ dauerhaft löschen?` : `Permanently delete “${item.label_de}”?`);
+    if (!confirmed) return;
+    const { error: deleteError } = await supabase.from("communication_practice_items").delete().eq("id", item.id);
+    if (deleteError) { setError(t.saveError); return; }
+    setPracticeItems((items) => items.filter((entry) => entry.id !== item.id));
+  };
+
   const signOut = async () => {
     if (!demo) await supabase.auth.signOut();
     setSession(null); setMember(null); setRole(null); setDemo(false); setView("welcome"); setError("");
   };
 
+  const audioMode = !audioEnabled ? "off" : speechRate <= 0.74 ? "slow" : "on";
+  const audioModeLabel = audioMode === "off"
+    ? (lang === "de" ? "Audio aus" : "Audio off")
+    : audioMode === "slow"
+      ? (lang === "de" ? "Audio langsam" : "Slow audio")
+      : (lang === "de" ? "Audio an" : "Audio on");
+  const cycleAudioMode = () => {
+    window.speechSynthesis?.cancel();
+    remoteAudio.current?.pause();
+    if (audioMode === "on") {
+      setAudioEnabled(false);
+      void savePreference({ speech_enabled: false });
+      return;
+    }
+    if (audioMode === "off") {
+      setAudioEnabled(true);
+      setSpeechRate(0.72);
+      void savePreference({ speech_enabled: true, speech_rate: 0.72 });
+      return;
+    }
+    setSpeechRate(0.82);
+    void savePreference({ speech_enabled: true, speech_rate: 0.82 });
+  };
+
+  const choosePatientFieldCount = (count: PatientChoiceCount) => {
+    setChoiceCount(count);
+    void savePreference({ choice_count: count });
+  };
+
   const shellHeader = (title?: string, allowBack = false) => (
     <header className="app-header">
-      <div className="header-left">{allowBack && <button className="header-button" onClick={openHome}><ArrowLeft /><span>{t.back}</span></button>}<Logo /></div>
+      <div className="header-left">{allowBack && role === "companion" && <button className="header-button" onClick={openHome}><ArrowLeft /><span>{t.back}</span></button>}<Logo /></div>
       {title && <strong className="header-title">{title}</strong>}
       <div className="header-actions">
-        <button className="header-button" onClick={() => { setAudioEnabled((v) => !v); window.speechSynthesis?.cancel(); }}>{audioEnabled ? <Volume2 /> : <VolumeX />}<span>{audioEnabled ? t.audioOn : t.audioOff}</span></button>
-        <button className="header-button" onClick={() => setLang((value) => value === "de" ? "en" : "de")}><Languages /><span>{lang === "de" ? "EN" : "DE"}</span></button>
+        {role === "user" && <>
+          <button className="header-button round-control" onClick={openHome} aria-label={t.home} title={t.home}><House /><span>{lang === "de" ? "Start" : "Home"}</span></button>
+          <label className="header-button field-count-control" title={lang === "de" ? "Anzahl Felder" : "Number of fields"}>
+            <Layers3 aria-hidden="true" />
+            <span className="sr-only">{lang === "de" ? "Anzahl Felder" : "Number of fields"}</span>
+            <select value={choiceCount} onChange={(event) => choosePatientFieldCount(Number(event.target.value) as PatientChoiceCount)} aria-label={lang === "de" ? "Anzahl Felder" : "Number of fields"}>
+              {allowedChoiceCounts.map((count) => <option key={count} value={count}>{count}</option>)}
+            </select>
+          </label>
+        </>}
+        <button className={`header-button round-control audio-${audioMode}`} onClick={cycleAudioMode} aria-label={audioModeLabel} title={audioModeLabel}>{audioMode === "off" ? <VolumeX /> : <Volume2 />}<span>{audioModeLabel}</span></button>
+        <button className="header-button round-control language-control" onClick={() => setLang((value) => value === "de" ? "en" : "de")} aria-label={lang === "de" ? "Switch to English" : "Zu Deutsch wechseln"} title={lang === "de" ? "English" : "Deutsch"}><Languages /><span>{lang === "de" ? "DE" : "EN"}</span></button>
       </div>
     </header>
+  );
+
+  const patientBottomBar = (onBack: () => void, onRepeat: () => void, screenKey: string) => (
+    <nav className="bottom-nav patient-bottom-nav" aria-label={lang === "de" ? "Schnellnavigation" : "Quick navigation"}>
+      <button onClick={onBack} aria-label={t.back}><ArrowLeft /><span>{t.back}</span></button>
+      <button onClick={() => { void logInteraction("choice_repeat", screenKey); onRepeat(); }} aria-label={t.repeat}><RotateCcw /><span>{t.repeat}</span></button>
+      <button onClick={() => { void logInteraction("audio_toggle", screenKey); cycleAudioMode(); }} aria-label={audioModeLabel}>{audioMode === "off" ? <VolumeX /> : <Volume2 />}<span>{audioModeLabel}</span></button>
+    </nav>
   );
 
   if (booting) return <main className="app-shell loading-screen"><Logo /><div className="loading-bar" /></main>;
@@ -722,31 +1437,22 @@ export function WortnahApp() {
       <div className="welcome-brand"><Logo /><p>{t.tagline}</p></div>
       <section className="welcome-card">
         <div className="trust-row"><span><ShieldCheck /> {t.secure}</span><span><Sparkles /> {t.install}</span></div>
-        <h1>{t.chooseArea}</h1>
-        <div className="role-grid">
-          <button className="role-card user-role" onClick={() => { setDesiredRole("user"); setView("login"); }}><span className="role-icon"><UserRound /></span><span><strong>{t.user}</strong><small>{t.userHint}</small></span><ChevronRight /></button>
-          <button className="role-card companion-role" onClick={() => { setDesiredRole("companion"); setView("login"); }}><span className="role-icon"><ShieldCheck /></span><span><strong>{t.companion}</strong><small>{t.companionHint}</small></span><ChevronRight /></button>
+        <h1>{lang === "de" ? "Wer nutzt Wortnah?" : "Who is using Wortnah?"}</h1>
+        <p className="profile-help">{lang === "de" ? "Profil auswählen und den vierstelligen Zugangscode eingeben." : "Choose a profile and enter its four-digit access code."}</p>
+        <div className="role-grid pilot-role-grid">
+          <button className="role-card user-role" onClick={() => { setPilotProfile("werner"); setDesiredRole("user"); setError(""); setView("login"); }}><span className="role-icon"><UserRound /></span><span><strong>Werner</strong><small>{t.userHint}</small></span><ChevronRight /></button>
+          <button className="role-card companion-role" onClick={() => { setPilotProfile("admin1"); setDesiredRole("companion"); setError(""); setView("login"); }}><span className="role-icon"><ShieldCheck /></span><span><strong>Admin 1</strong><small>{t.companionHint}</small></span><ChevronRight /></button>
+          <button className="role-card companion-role" onClick={() => { setPilotProfile("admin2"); setDesiredRole("companion"); setError(""); setView("login"); }}><span className="role-icon"><ShieldCheck /></span><span><strong>Admin 2</strong><small>{t.companionHint}</small></span><ChevronRight /></button>
         </div>
-        <div className="demo-row"><p>{t.demoNote}</p><button onClick={() => openDemo(desiredRole)}>{t.demo}: {desiredRole === "user" ? t.user : t.companion}</button></div>
       </section>
       <button className="language-float" onClick={() => setLang((value) => value === "de" ? "en" : "de")}><Languages /> {lang === "de" ? "English" : "Deutsch"}</button>
     </main>
   );
 
-  if (view === "login") return (
-    <main className="app-shell auth-page">
-      <button className="text-action back-action" onClick={() => setView("welcome")}><ArrowLeft /> {t.back}</button>
-      <section className="auth-card">
-        <Logo /><div className="eyebrow">{desiredRole === "user" ? t.user : t.companion}</div>
-        <h1>{t.connect}</h1><p>{t.enrollStrong}</p>
-        <div className="segmented"><button className={authMode === "signin" ? "active" : ""} onClick={() => setAuthMode("signin")}>{t.signIn}</button><button className={authMode === "signup" ? "active" : ""} onClick={() => setAuthMode("signup")}>{t.signUp}</button></div>
-        <label>{t.email}<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></label>
-        <label>{t.password}<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={authMode === "signup" ? "new-password" : "current-password"} /></label>
-        {status && <p className="form-status">{status}</p>}{error && <p className="form-error" role="alert">{error}</p>}
-        <button className="primary-button" onClick={handleAuth}>{t.continue}<ChevronRight /></button>
-      </section>
-    </main>
-  );
+  if (view === "login") {
+    const profileLabel = pilotProfile === "werner" ? "Werner" : pilotProfile === "admin1" ? "Admin 1" : "Admin 2";
+    return <main className="app-shell"><PinPad stepLabel={lang === "de" ? "Schritt 1 von 2" : "Step 1 of 2"} title={`${profileLabel} · ${lang === "de" ? "Zugangscode" : "Access code"}`} hint={lang === "de" ? "Geben Sie zuerst den vierstelligen Zugangscode für dieses Profil ein." : "First enter the four-digit access code for this profile."} submitLabel={lang === "de" ? "Zugang prüfen" : "Check access"} cancelLabel={lang === "de" ? "Abbrechen" : "Cancel"} error={error} busy={authBusy} busyLabel={lang === "de" ? "Zugang wird geprüft …" : "Checking access …"} onComplete={handlePilotLogin} onBack={() => { setPilotProfile(null); setError(""); setView("welcome"); }} /></main>;
+  }
 
   if (view === "onboarding") return (
     <main className="app-shell auth-page">
@@ -759,7 +1465,7 @@ export function WortnahApp() {
     </main>
   );
 
-  if (view === "pin") return <main className="app-shell"><PinPad title={pinMode === "create" ? t.setPin : t.enterPin} hint={`${t.pinHint}${demo ? " Demo-PIN: 2468" : ""}`} error={error} onComplete={handlePin} onBack={pinMode === "unlock" ? signOut : () => setView("onboarding")} />{pinMode === "unlock" && !demo && <button className="forgot-pin" onClick={signOut}>{t.forgotPin}</button>}</main>;
+  if (view === "pin") return <main className="app-shell"><PinPad stepLabel={pinMode === "unlock" ? (lang === "de" ? "Schritt 2 von 2" : "Step 2 of 2") : (lang === "de" ? "Gerät einrichten" : "Set up device")} title={pinMode === "create" ? t.setPin : (lang === "de" ? "Tägliche PIN eingeben" : "Enter daily PIN")} hint={pinMode === "unlock" ? (lang === "de" ? "Der Zugangscode stimmt. Geben Sie jetzt die vierstellige tägliche PIN ein." : "The access code is correct. Now enter the four-digit daily PIN.") : t.pinHint} submitLabel={pinMode === "create" ? (lang === "de" ? "PIN speichern" : "Save PIN") : (lang === "de" ? "Anmelden" : "Sign in")} cancelLabel={lang === "de" ? "Zurück" : "Back"} error={error} busy={authBusy} busyLabel={lang === "de" ? "PIN wird geprüft …" : "Checking PIN …"} onComplete={handlePin} onBack={pinMode === "unlock" ? signOut : () => setView("onboarding")} />{pinMode === "unlock" && !demo && <button className="forgot-pin" onClick={signOut} disabled={authBusy}>{t.forgotPin}</button>}</main>;
 
   if (view === "home") return (
     <main className="app-shell main-app" style={{ "--text-scale": textScale } as React.CSSProperties}>
@@ -768,12 +1474,28 @@ export function WortnahApp() {
         <div className="page-intro"><span className="mode-pill">{demo ? t.demoMode : t.liveMode}</span><h1>{t.whatDo}</h1></div>
         <div className="home-actions">
           <button className="home-card communicate-card" onClick={() => { resetCommunication(); setView("communicate"); }}><span className="home-icon"><MessageCircle /></span><span><strong>{t.communicate}</strong><small>{lang === "de" ? "Eine Nachricht zusammenstellen" : "Build a message"}</small></span><ChevronRight /></button>
+          <button className="home-card search-card" onClick={() => { setSearchPath([]); setSelectedSearch(null); setShowMissingChoices(false); setView("search"); }}><span className="home-icon"><Search /></span><span><strong>{t.search}</strong><small>{lang === "de" ? "Schritt für Schritt zum Suchsatz" : "Build a search step by step"}</small></span><ChevronRight /></button>
           <button className="home-card practice-card" onClick={() => { void logInteraction("practice_started", "practice"); setPracticeIndex(0); setView("practice"); }}><span className="home-icon"><BookOpen /></span><span><strong>{t.practice}</strong><small>{lang === "de" ? "Hören und nachsprechen" : "Listen and repeat"}</small></span><ChevronRight /></button>
           <button className="home-card messages-card" onClick={() => setView("messages")}><span className="home-icon"><Bell /></span><span><strong>{t.messages}</strong><small>{messages.length ? `${messages.length} ${lang === "de" ? "Mitteilung(en)" : "message(s)"}` : t.noMessages}</small></span><ChevronRight /></button>
         </div>
         <button className="settings-card" onClick={() => setView("settings")}><Settings2 /><span><strong>{t.settings}</strong><small>{lang === "de" ? "Ton, Anzeige und Auswahl" : "Sound, display and choices"}</small></span><ChevronRight /></button>
       </div>
       <footer className="status-footer"><span className={online ? "online" : "offline"} />{online ? t.online : t.offline}</footer>
+    </main>
+  );
+
+  if (view === "search") return (
+    <main className="app-shell main-app" style={{ "--text-scale": textScale } as React.CSSProperties}>
+      {shellHeader(t.search, true)}
+      <div className="content-wrap communication-content">
+        {searchPath.length > 0 && <nav className="search-path" aria-label={lang === "de" ? "Suchpfad" : "Search path"}><button onClick={() => { setSearchPath([]); setSelectedSearch(null); }}>{t.search}</button>{searchPath.map((node, index) => <span key={node.option_key}><ChevronRight /><button onClick={() => { setSearchPath((path) => path.slice(0, index + 1)); setSelectedSearch(null); }}>{lang === "de" ? node.label_de : node.label_en || node.label_de}</button></span>)}</nav>}
+        <div className="page-heading"><span className="search-level-pill">{lang === "de" ? "Ebene" : "Level"} {searchPath.length + 1}</span><h1>{searchPath.length ? (lang === "de" ? "Wählen Sie den nächsten Schritt" : "Choose the next step") : (lang === "de" ? "Was möchten Sie suchen?" : "What would you like to search?")}</h1><p>{t.firstTap}</p></div>
+        <ChoiceGrid choices={currentSearchChoices} lang={lang} selected={selectedSearch} speaking={speaking} onChoose={chooseSearch} count={choiceCount} />
+        <button className="missing-topic-button" onClick={() => setShowMissingChoices((value) => !value)}><Plus />{t.missingTopic}</button>
+        {showMissingChoices && <section className="missing-choice-panel"><h2>{t.whatMissing}</h2><div>{[{ id: "topic", de: "Suchthema fehlt", en: "Search topic is missing" }, { id: "result", de: "Passendes Ergebnis fehlt", en: "The right result is missing" }, { id: "help", de: "Ich brauche Hilfe", en: "I need help" }].map((item) => <button key={item.id} onClick={() => reportMissing(`search_${item.id}`)}>{item[lang]}</button>)}</div></section>}
+        {searchHistory.length > 0 && <section className="search-history" aria-label={lang === "de" ? "Letzte Suchen" : "Recent searches"}><h2>{lang === "de" ? "Letzte Suchen" : "Recent searches"}</h2><div>{searchHistory.slice(0, 5).map((item) => <article key={item.id}><span>{item.text}</span><button onClick={() => speak(item.text, `history-${item.id}`)} aria-label={lang === "de" ? "Anhören" : "Listen"}><Volume2 /></button><button onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(item.text)}`, "_blank", "noopener,noreferrer")}><Search />{lang === "de" ? "Suchen" : "Search"}</button></article>)}</div></section>}
+      </div>
+      {patientBottomBar(searchBack, () => { const current = currentSearchNodes.find((item) => item.option_key === selectedSearch) ?? currentSearchNodes[0]; if (current) { const text = lang === "de" ? current.query_de || current.label_de : current.query_en || current.label_en || current.label_de; current.query_de ? speak(text, `search-${current.option_key}`) : speakWithDevice(text, `search-${current.option_key}`); } }, "internet_search")}
     </main>
   );
 
@@ -794,7 +1516,8 @@ export function WortnahApp() {
         <div className="content-wrap communication-content">
           {commStep !== "success" && <div className="progress-row"><span className={commStep === "purpose" ? "active" : "done"}>1</span><i /><span className={commStep === "topic" ? "active" : ["detail","review","practice","priority"].includes(commStep) ? "done" : ""}>2</span><i /><span className={commStep === "detail" ? "active" : ["review","practice","priority"].includes(commStep) ? "done" : ""}>3</span><i /><span className={["review","practice","priority"].includes(commStep) ? "active" : ""}>4</span></div>}
           <div className="page-heading"><h1>{title}</h1>{["purpose","topic","detail"].includes(commStep) && <p>{t.firstTap}</p>}</div>
-          {["purpose","topic","detail"].includes(commStep) && <ChoiceGrid choices={currentChoices} lang={lang} selected={selected} speaking={speaking} onChoose={chooseCommunication} count={commStep === "purpose" ? 4 : choiceCount} />}
+          {patientChoicesLoading && ["topic","detail"].includes(commStep) && <div className="choice-loading" role="status"><div className="loading-bar" /><span>{lang === "de" ? "Auswahl wird vorbereitet …" : "Preparing choices …"}</span></div>}
+          {["purpose","topic","detail"].includes(commStep) && <ChoiceGrid choices={currentChoices} lang={lang} selected={selected} speaking={speaking} onChoose={chooseCommunication} count={choiceCount} />}
           {commStep !== "success" && <button className="missing-topic-button" onClick={() => setShowMissingChoices((open) => !open)} aria-expanded={showMissingChoices}><CircleHelp />{t.missingTopic}</button>}
           {showMissingChoices && commStep !== "success" && <section className="missing-choice-panel" aria-label={t.whatMissing}><h2>{t.whatMissing}</h2><div>{missingChoices.map((item) => <button key={item.id} onClick={() => void reportMissing(item.id)}>{item[lang]}</button>)}</div></section>}
           {status && view === "communicate" && <p className="inline-status">{status}</p>}
@@ -803,35 +1526,39 @@ export function WortnahApp() {
           {commStep === "priority" && detail && <section className="priority-panel"><div className="compact-message">{detail[lang]}</div><div className="priority-grid">{(["normal","important","very_important"] as Priority[]).map((item) => <button key={item} className={`priority-card ${item} ${priority === item ? "selected" : ""}`} onClick={() => setPriority(item)}><span />{item === "normal" ? t.normal : item === "important" ? t.important : t.veryImportant}{priority === item && <Check />}</button>)}</div>{error && <p className="form-error">{error}</p>}<button className="send-final" onClick={sendMessage}><Send />{t.sendNow}</button></section>}
           {commStep === "success" && <section className="success-panel"><span className="success-check"><Check /></span><h1>{t.sent}</h1><p>{t.sentHint}</p><button className="primary-button" onClick={openHome}>{t.home}</button></section>}
         </div>
-        {commStep !== "success" && <nav className="bottom-nav"><button onClick={communicationBack}><ArrowLeft />{t.back}</button><button onClick={() => { void logInteraction("choice_repeat", `communicate_${commStep}`); const text = commStep === "review" || commStep === "practice" || commStep === "priority" ? detail?.[lang] : selected ? currentChoices.find((item) => item.id === selected)?.[lang] : currentChoices[0]?.[lang]; if (text) speak(text); }}><RotateCcw />{t.repeat}</button><button onClick={() => { void logInteraction("audio_toggle", `communicate_${commStep}`); setAudioEnabled((v) => !v); }}>{audioEnabled ? <Volume2 /> : <VolumeX />}{audioEnabled ? t.audioOn : t.audioOff}</button></nav>}
+        {commStep !== "success" && patientBottomBar(communicationBack, () => { const text = commStep === "review" || commStep === "practice" || commStep === "priority" ? detail?.[lang] : selected ? currentChoices.find((item) => item.id === selected)?.[lang] : currentChoices[0]?.[lang]; if (text) speak(text); }, `communicate_${commStep}`)}
       </main>
     );
   }
 
   if (view === "practice") {
-    const practiceItems = lang === "de" ? ["Bitte", "Danke", "Ich brauche eine Pause.", "Bitte bring mir etwas zu trinken."] : ["Please", "Thank you", "I need a break.", "Please bring me something to drink."];
-    const item = practiceItems[practiceIndex % practiceItems.length];
-    return <main className="app-shell main-app" style={{ "--text-scale": textScale } as React.CSSProperties}>{shellHeader(t.practice, true)}<div className="content-wrap standalone-practice"><span className="practice-orb"><Headphones /></span><div className="page-heading"><h1>{t.practiceTitle}</h1><p>{t.practiceHint}</p></div><blockquote>{item}</blockquote><button className="listen-large" onClick={() => speak(item)}><Volume2 />{t.listen}</button><div className="practice-controls"><button onClick={() => speak(item)}><RotateCcw />{t.repeat}</button><button className="primary-button" onClick={() => { void logInteraction("practice_completed", "practice"); setPracticeIndex((value) => value + 1); }}>{t.next}<ChevronRight /></button></div><button className="text-action" onClick={openHome}>{t.done}</button></div></main>;
+    const fallbackItems = lang === "de"
+      ? ["Bitte", "Danke", "Ich brauche eine Pause.", "Bitte bring mir etwas zu trinken.", "Mir ist kalt.", "Mir ist warm.", "Ich möchte spazieren gehen.", "Bitte sprechen Sie langsamer.", "Ich habe das verstanden.", "Ich brauche Hilfe.", "Ich möchte Musik hören.", "Bitte sagen Sie das noch einmal."]
+      : ["Please", "Thank you", "I need a break.", "Please bring me something to drink.", "I am cold.", "I am warm.", "I would like to go for a walk.", "Please speak more slowly.", "I understood that.", "I need help.", "I would like to listen to music.", "Please say that again."];
+    const visiblePracticeItems = practiceItems.length ? practiceItems.slice(0, choiceCount).map((entry) => lang === "de" ? entry.label_de : entry.label_en || entry.label_de) : fallbackItems.slice(0, choiceCount);
+    const item = visiblePracticeItems[practiceIndex % visiblePracticeItems.length];
+    return <main className="app-shell main-app practice-page" style={{ "--text-scale": textScale } as React.CSSProperties}>{shellHeader(t.practice, true)}<div className="content-wrap standalone-practice"><div className="practice-heading"><span className="practice-orb"><Headphones /></span><div><p className="practice-kicker">{lang === "de" ? "Schritt für Schritt" : "Step by step"}</p><h1>{t.practiceTitle}</h1><p>{t.practiceHint}</p></div></div><div className="practice-stats" aria-label={lang === "de" ? "Übungsfortschritt" : "Practice progress"}><article className="practice-stat peach"><small>{lang === "de" ? "Heute" : "Today"}</small><strong>{practiceIndex + 1}</strong><span>{lang === "de" ? "Übung ausgewählt" : "practice selected"}</span></article><article className="practice-stat mint"><small>{lang === "de" ? "Methode" : "Method"}</small><strong><Headphones /></strong><span>{lang === "de" ? "Hören" : "Listen"}</span></article><article className="practice-stat lavender"><small>{lang === "de" ? "Nächster Schritt" : "Next step"}</small><strong><Mic /></strong><span>{lang === "de" ? "Nachsprechen" : "Repeat"}</span></article></div><section className="practice-game-card"><div><p className="practice-kicker">{lang === "de" ? "Wählen Sie einen Satz" : "Choose a phrase"}</p><h2>{lang === "de" ? `${visiblePracticeItems.length} Wörter und Sätze zum Üben` : `${visiblePracticeItems.length} words and phrases to practice`}</h2></div><div className="practice-choice-grid">{visiblePracticeItems.map((practiceItem, index) => <button key={`${practiceItem}-${index}`} className={`practice-choice ${item === practiceItem ? "selected" : ""}`} aria-pressed={item === practiceItem} onClick={() => { setPracticeIndex(index); speak(practiceItem, `practice-${index}`); }}><span>{index + 1}</span><strong>{practiceItem}</strong><Volume2 /></button>)}</div></section><blockquote>{item}</blockquote><button className="listen-large" onClick={() => speak(item)}><Volume2 />{t.listen}</button><div className="practice-controls"><button onClick={() => speak(item)}><RotateCcw />{t.repeat}</button><button className="primary-button" onClick={() => { void logInteraction("practice_completed", "practice"); setPracticeIndex((value) => value + 1); }}>{t.next}<ChevronRight /></button></div><button className="text-action" onClick={openHome}>{t.done}</button></div>{patientBottomBar(openHome, () => speak(item), "practice")}</main>;
   }
 
   if (view === "messages") return (
-    <main className="app-shell main-app" style={{ "--text-scale": textScale } as React.CSSProperties}>{shellHeader(t.messages, true)}<div className="content-wrap"><div className="page-heading"><h1>{t.messages}</h1><p>{lang === "de" ? "Ihre gesendeten Nachrichten und der Lesestatus." : "Your sent messages and read status."}</p></div><div className="message-list">{messages.length === 0 ? <div className="empty-state"><Bell /><h2>{t.noMessages}</h2></div> : messages.map((message) => <article className={`message-item ${message.priority}`} key={message.id}><div className="message-meta"><span>{message.priority === "normal" ? t.normal : message.priority === "important" ? t.important : t.veryImportant}</span><time>{new Intl.DateTimeFormat(lang === "de" ? "de-DE" : "en-GB", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }).format(new Date(message.sent_at))}</time></div><p>{lang === "de" ? message.body_de : message.body_en}</p><div className="delivery-state">{message.message_receipts?.length ? <><Check />{t.read}</> : <><Send />{t.delivery}</>}</div></article>)}</div></div></main>
+    <main className="app-shell main-app" style={{ "--text-scale": textScale } as React.CSSProperties}>{shellHeader(t.messages, true)}<div className="content-wrap"><div className="page-heading"><h1>{t.messages}</h1><p>{lang === "de" ? "Ihre gesendeten Nachrichten und der Lesestatus." : "Your sent messages and read status."}</p></div><div className="message-list">{messages.length === 0 ? <div className="empty-state"><Bell /><h2>{t.noMessages}</h2></div> : messages.map((message) => <article className={`message-item ${message.priority}`} key={message.id}><div className="message-meta"><span>{message.priority === "normal" ? t.normal : message.priority === "important" ? t.important : t.veryImportant}</span><time>{new Intl.DateTimeFormat(lang === "de" ? "de-DE" : "en-GB", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }).format(new Date(message.sent_at))}</time></div><p>{lang === "de" ? message.body_de : message.body_en}</p><div className="delivery-state">{message.message_receipts?.length ? <><Check />{t.read}</> : <><Send />{t.delivery}</>}</div><div className="message-actions"><button onClick={() => speak(lang === "de" ? message.body_de ?? "" : message.body_en ?? "") }><Volume2 />{t.listen}</button><button onClick={() => { const reused = { id: "reuse", de: message.body_de ?? "", en: message.body_en ?? "" }; setPurpose(purposes[0]); setTopic(topicsByPurpose.tell[0]); setDetail(reused); setCommStep("review"); setView("communicate"); }}><RotateCcw />{lang === "de" ? "Wieder verwenden" : "Use again"}</button></div></article>)}</div></div></main>
   );
 
   if (view === "settings") {
     const previewLabels = lang === "de"
-      ? ["Essen", "Trinken", "Familie", "Termine", "Gefühle", "Hilfe", "Aktivitäten", "Weitere Themen"]
-      : ["Food", "Drinks", "Family", "Appointments", "Feelings", "Help", "Activities", "More topics"];
+      ? ["Essen", "Trinken", "Familie", "Termine", "Gefühle", "Hilfe", "Aktivitäten", "Weitere Themen", "Wetter", "Musik", "Besuch", "Pause"]
+      : ["Food", "Drinks", "Family", "Appointments", "Feelings", "Help", "Activities", "More topics", "Weather", "Music", "Visit", "Break"];
     return (
       <main className="app-shell main-app" style={{ "--text-scale": textScale } as React.CSSProperties}>{shellHeader(t.settings, true)}<div className="content-wrap settings-content">
         <div className="settings-section"><h2><Volume2 />{lang === "de" ? "Sprache und Ton" : "Language and sound"}</h2>
           <button className="setting-row" onClick={() => { setAudioEnabled((v) => !v); savePreference({ speech_enabled: !audioEnabled }); }}><span><strong>{audioEnabled ? t.audioOn : t.audioOff}</strong><small>{lang === "de" ? "Eine Auswahl wird beim Antippen klar vorgelesen" : "A choice is read clearly when tapped"}</small></span><span className={`switch ${audioEnabled ? "on" : ""}`}><i /></span></button>
+          <button className="setting-row" onClick={() => { const next = !autoReadChoices; setAutoReadChoices(next); savePreference({ auto_read_choices: next }); }}><span><strong>{lang === "de" ? "Hauptauswahl automatisch vorlesen" : "Read main choices automatically"}</strong><small>{lang === "de" ? "Wortnah liest die Überschrift und sichtbaren Karten nacheinander vor." : "Wortnah reads the heading and visible cards one after another."}</small></span><span className={`switch ${autoReadChoices ? "on" : ""}`}><i /></span></button>
           <div className="setting-block"><strong>{t.voice}</strong><small>{lang === "de" ? "Wortnah verwendet nur verfügbares Standarddeutsch (de-DE)." : "Wortnah uses available Standard German voices (de-DE) only."}</small><div className="option-row">{(["auto","female","male"] as VoicePreference[]).map((voice) => <button key={voice} className={voicePreference === voice ? "active" : ""} onClick={() => { setVoicePreference(voice); savePreference({ voice_name: voice === "auto" ? null : `wortnah:${voice}`, voice_locale: "de-DE" }); }}>{voice === "auto" ? t.voiceAuto : voice === "female" ? t.voiceFemale : t.voiceMale}</button>)}</div><button className="test-voice-button" onClick={() => speak(lang === "de" ? "Guten Tag. Ich spreche klar und in Ruhe." : "Hello. I speak clearly and calmly.")}><Volume2 />{t.voiceTest}</button></div>
           <div className="setting-block"><strong>{t.speechSpeed}</strong><div className="option-row">{[[0.72,t.slow],[0.82,t.clear],[0.92,t.normalSpeed]].map(([rate,label]) => <button key={String(rate)} className={speechRate === rate ? "active" : ""} onClick={() => { setSpeechRate(rate as number); savePreference({ speech_rate: rate }); }}>{label}</button>)}</div></div>
           <button className="setting-row" onClick={() => setLang((value) => value === "de" ? "en" : "de")}><span><strong>{lang === "de" ? "Deutsch" : "English"}</strong><small>{lang === "de" ? "Sprache der ganzen App" : "Language for the whole app"}</small></span><Languages /></button>
         </div>
         <div className="settings-section"><h2><Settings2 />{t.appearance}</h2>
-          <div className="setting-block"><strong>{t.choices}</strong><small>{lang === "de" ? "Mein Bereich kann diese Einstellung jederzeit selbst ändern." : "My Space can change this setting at any time."}</small><div className="option-row">{[2,4,6,8].map((count) => <button key={count} className={choiceCount === count ? "active" : ""} onClick={() => { setChoiceCount(count); savePreference({ choice_count: count }); }}>{count}</button>)}</div><div className={`choice-preview preview-${choiceCount}`}>{previewLabels.slice(0, choiceCount).map((label) => <span key={label}>{label}</span>)}</div></div>
+          <div className="setting-block"><strong>{t.choices}</strong><small>{lang === "de" ? `Mein Bereich kann bis zum festgelegten Maximum von ${adminChoiceMaximum} wählen.` : `My Space can choose up to the configured maximum of ${adminChoiceMaximum}.`}</small><div className="option-row">{allowedChoiceCounts.map((count) => <button key={count} className={choiceCount === count ? "active" : ""} onClick={() => { setChoiceCount(count); savePreference({ choice_count: count }); }}>{count}</button>)}</div><div className={`choice-preview preview-${choiceCount}`}>{previewLabels.slice(0, choiceCount).map((label) => <span key={label}>{label}</span>)}</div></div>
           <div className="setting-block"><strong>{t.textSize}</strong><div className="option-row">{[[1,t.standard],[1.12,t.large],[1.24,t.larger]].map(([scale,label]) => <button key={String(scale)} className={textScale === scale ? "active" : ""} onClick={() => { setTextScale(scale as number); savePreference({ text_scale: Number(scale) * 1.3 }); }}>{label}</button>)}</div></div>
         </div>
         <div className="settings-section"><h2><LockKeyhole />{t.account}</h2><button className="setting-row destructive-row" onClick={signOut}><span><strong>{t.signOut}</strong><small>{lang === "de" ? "Dieses Gerät sicher trennen" : "Disconnect this device securely"}</small></span><LogOut /></button></div>
@@ -842,16 +1569,128 @@ export function WortnahApp() {
   const importantCount = messages.filter((message) => message.priority !== "normal").length;
   const costText = new Intl.NumberFormat(lang === "de" ? "de-DE" : "en-GB", { style: "currency", currency: "EUR" }).format(usageSummary.aiCostCents / 100);
   const maxDailyActivity = Math.max(1, ...usageSummary.dailyActivity.map((day) => day.count));
+  const adminSectionTitle = adminSection === "overview" ? t.dashboard : adminSection === "content" ? (lang === "de" ? "Wörter und Bereiche" : "Words and sections") : adminSection === "practice" ? t.practice : adminSection === "activity" ? (lang === "de" ? "Aktivitäten" : "Activity") : t.settings;
+  const filteredTopicOptions = adminTopicOptions.filter((item) => !choiceDraft.purpose_key || item.purpose_key === choiceDraft.purpose_key);
+  const adminLevelLabel = contentLevel === "purpose"
+    ? (lang === "de" ? "Ebene 1 · Bereiche" : "Level 1 · Purposes")
+    : contentLevel === "topic"
+      ? (lang === "de" ? "Ebene 2 · Themen" : "Level 2 · Topics")
+      : (lang === "de" ? "Ebene 3 · Wörter & Sätze" : "Level 3 · Words & phrases");
+  const purposeLabel = (key: string | null) => {
+    if (!key) return lang === "de" ? "Kommunikation" : "Communication";
+    const builtIn = purposes.find((entry) => entry.id === key);
+    const custom = customPurposes.find((entry) => entry.option_key === key);
+    return builtIn?.[lang] ?? (lang === "de" ? custom?.label_de : custom?.label_en || custom?.label_de) ?? key;
+  };
+  const topicLabel = (key: string | null) => {
+    if (!key) return "";
+    const builtIn = Object.values(topicsByPurpose).flat().find((entry) => entry.id === key);
+    const custom = adminTopicOptions.find((entry) => entry.option_key === key);
+    return builtIn?.[lang] ?? (lang === "de" ? custom?.label_de : custom?.label_en || custom?.label_de) ?? key;
+  };
+  const visibleAdminPreview = adminChoices.filter((item) => item.is_published).slice(0, Math.min(choiceCount, 6));
+  const adminPreviewLabels = visibleAdminPreview.length
+    ? visibleAdminPreview.map((item) => lang === "de" ? item.label_de : item.label_en || item.label_de)
+    : contentLevel === "purpose"
+      ? purposes.slice(0, Math.min(choiceCount, 6)).map((item) => item[lang])
+      : contentLevel === "topic"
+        ? (topicsByPurpose[choiceDraft.purpose_key] ?? topicsByPurpose.tell).slice(0, Math.min(choiceCount, 6)).map((item) => item[lang])
+        : getDetails(choiceDraft.purpose_key, choiceDraft.topic_key || "my_day").slice(0, Math.min(choiceCount, 6)).map((item) => item[lang]);
+  const filteredAdminSearchNodes = adminSearchNodes.filter((item) => item.search_level === adminSearchLevel && (!adminSearchText.trim() || item.label_de.toLocaleLowerCase("de-DE").includes(adminSearchText.trim().toLocaleLowerCase("de-DE"))));
+  const searchParentOptions = adminSearchLevel === 1 ? [] : adminSearchNodes.filter((item) => item.search_level === adminSearchLevel - 1);
+  const searchNodeLabel = (key: string | null) => {
+    if (!key) return lang === "de" ? "Internet suchen" : "Search the internet";
+    const item = adminSearchNodes.find((node) => node.option_key === key);
+    return item ? (lang === "de" ? item.label_de : item.label_en || item.label_de) : key;
+  };
+  const adminSearchPreviewLabels = filteredAdminSearchNodes.filter((item) => item.is_published).slice(0, Math.min(choiceCount, 6)).map((item) => lang === "de" ? item.label_de : item.label_en || item.label_de);
+  const activityLabel = (event: ActivityEvent) => {
+    const de: Record<string, string> = { screen_view: "Seite geöffnet", choice_preview: "Auswahl angehört", choice_confirm: "Auswahl bestätigt", choice_repeat: "Audio wiederholt", back: "Zurück gegangen", audio_toggle: "Ton geändert", practice_started: "Übung begonnen", practice_completed: "Übung abgeschlossen", help_requested: "Fehlende Auswahl gemeldet", message_sent: "Nachricht gesendet" };
+    const en: Record<string, string> = { screen_view: "Opened page", choice_preview: "Previewed choice", choice_confirm: "Confirmed choice", choice_repeat: "Repeated audio", back: "Went back", audio_toggle: "Changed sound", practice_started: "Started practice", practice_completed: "Completed practice", help_requested: "Reported missing choice", message_sent: "Sent message" };
+    return (lang === "de" ? de : en)[event.event_type] ?? event.event_type.replaceAll("_", " ");
+  };
+  const adminNav = (
+    <aside className="admin-sidebar"><nav>
+      <button className={adminSection === "overview" ? "active" : ""} onClick={() => setAdminSection("overview")}><BarChart3 />{t.dashboard}</button>
+      <button className={adminSection === "content" ? "active" : ""} onClick={() => setAdminSection("content")}><Layers3 />{lang === "de" ? "Inhalte" : "Content"}</button>
+      <button className={adminSection === "practice" ? "active" : ""} onClick={() => setAdminSection("practice")}><BookOpen />{t.practice}</button>
+      <button className={adminSection === "activity" ? "active" : ""} onClick={() => setAdminSection("activity")}><ClipboardCheck />{lang === "de" ? "Verlauf" : "Activity"}</button>
+      <button onClick={() => setView("messages")}><Bell />{t.messages}</button>
+      <button className={adminSection === "settings" ? "active" : ""} onClick={() => setAdminSection("settings")}><Settings2 />{t.settings}</button>
+    </nav><button className="text-action" onClick={signOut}><LogOut />{t.signOut}</button></aside>
+  );
   return (
     <main className="app-shell main-app admin-app">
       {shellHeader(t.companion)}
       <div className="admin-layout">
-        <aside className="admin-sidebar"><nav><button className="active"><BarChart3 />{t.dashboard}</button><button onClick={() => setView("messages")}><Bell />{t.messages}</button><button onClick={() => setView("settings")}><Settings2 />{t.settings}</button></nav><button className="text-action" onClick={signOut}><LogOut />{t.signOut}</button></aside>
+        {adminNav}
         <div className="admin-main">
-          <div className="admin-title"><div><span className="mode-pill">{demo ? t.demoMode : t.liveMode}</span><h1>{t.dashboard}</h1><p>{lang === "de" ? "Ein ruhiger Überblick über Kommunikation und Nutzung." : "A calm overview of communication and usage."}</p></div><div className="connection-pill"><span className={online ? "online" : "offline"} />{online ? t.online : t.offline}</div></div>
-          <section className="kpi-grid"><article><span className="kpi-icon blue"><MessageCircle /></span><div><strong>{usageSummary.messagesThisWeek}</strong><small>{t.messagesWeek}</small></div></article><article><span className="kpi-icon green"><Check /></span><div><strong>{usageSummary.activeDays}</strong><small>{t.activeDays}</small></div></article><article><span className="kpi-icon amber"><Bell /></span><div><strong>{importantCount}</strong><small>{t.kpiImportant}</small></div></article><article><span className="kpi-icon blue"><CircleHelp /></span><div><strong>{usageSummary.missingThisWeek}</strong><small>{t.missingReports}</small></div></article></section>
-          <div className="admin-columns"><section className="admin-panel"><div className="panel-heading"><div><h2>{t.messages}</h2><p>{lang === "de" ? "Neueste zuerst" : "Newest first"}</p></div><Bell /></div><div className="compact-list">{messages.length === 0 ? <p className="quiet-empty">{t.noMessages}</p> : messages.slice(0,5).map((message) => <article key={message.id}><div><span className={`priority-dot ${message.priority}`} /> <time>{new Intl.DateTimeFormat(lang === "de" ? "de-DE" : "en-GB", { hour: "2-digit", minute: "2-digit" }).format(new Date(message.sent_at))}</time></div><p>{lang === "de" ? message.body_de : message.body_en}</p>{message.message_receipts?.length ? <span className="read-label"><Check />{t.read}</span> : <button className="read-button" onClick={() => markRead(message)}>{t.markRead}</button>}</article>)}</div></section><section className="admin-panel invite-panel"><div className="panel-heading"><div><h2>{t.inviteUser}</h2><p>{lang === "de" ? "Einmalige sichere Einrichtung" : "One-time secure setup"}</p></div><UserRound /></div>{generatedInvite ? <div className="invite-code"><strong>{generatedInvite}</strong><p>{t.codeValid}</p></div> : <button className="primary-button" onClick={createInvite}>{t.createCode}<ChevronRight /></button>}{error && <p className="form-error">{error}</p>}<div className="recommendation-block"><h3><Sparkles />{t.recommendations}</h3><p>{t.noRecommendations}</p></div></section></div>
-          <section className="usage-panels"><article className="admin-panel cost-controller-panel"><div className="panel-heading"><div><h2>{t.aiController}</h2><p>{usageSummary.budget.ai_enabled ? t.aiUsage : t.aiManualOnly}</p></div><ShieldCheck /></div><div className="controller-status"><strong>{usageSummary.budget.ai_enabled ? t.aiUsage : t.aiLocked}</strong><span>{usageSummary.budget.ai_enabled ? t.aiManualOnly : lang === "de" ? "Normale Wortnah-Nutzung verwendet keine KI-Tokens." : "Normal Wortnah use does not use AI tokens."}</span></div><dl><div><dt>{lang === "de" ? "Anfragen" : "Requests"}</dt><dd>{usageSummary.aiRequests} / {usageSummary.budget.monthly_request_limit}</dd></div><div><dt>{lang === "de" ? "Tokens" : "Tokens"}</dt><dd>{usageSummary.aiInputTokens + usageSummary.aiOutputTokens}</dd></div><div><dt>{lang === "de" ? "Kosten" : "Cost"}</dt><dd>{costText} / {new Intl.NumberFormat(lang === "de" ? "de-DE" : "en-GB", { style: "currency", currency: "EUR" }).format(usageSummary.budget.monthly_cost_limit_cents / 100)}</dd></div></dl></article><article className="admin-panel usage-trend-panel"><div className="panel-heading"><div><h2>{t.usageOverTime}</h2><p>{usageSummary.startedAt ? (lang === "de" ? "Seit der ersten echten Nutzung" : "Since first real use") : (lang === "de" ? "Beginnt mit der ersten echten Nutzung" : "Begins with first real use")}</p></div><BarChart3 /></div>{usageSummary.dailyActivity.length ? <div className="usage-bars">{usageSummary.dailyActivity.map((day) => <div key={day.label}><i style={{ height: `${Math.max(6, (day.count / maxDailyActivity) * 100)}%` }} /><span>{day.label}</span><b>{day.count}</b></div>)}</div> : <p className="quiet-empty">{lang === "de" ? "Noch keine reale Nutzung erfasst." : "No real usage recorded yet."}</p>}</article></section>
+          <div className="admin-title"><div><span className="mode-pill">{demo ? t.demoMode : t.liveMode}</span><h1>{adminSectionTitle}</h1><p>{adminSection === "overview" ? (lang === "de" ? "Ein ruhiger Überblick über Kommunikation und Nutzung." : "A calm overview of communication and usage.") : adminSection === "content" ? (lang === "de" ? "Bestimmen Sie, welche Auswahl Werner sieht." : "Control which choices Werner sees.") : adminSection === "practice" ? (lang === "de" ? "Wörter und Sätze für das selbstständige Üben." : "Words and phrases for independent practice.") : adminSection === "activity" ? (lang === "de" ? "Die letzten Schritte in zeitlicher Reihenfolge." : "Recent actions in chronological order.") : (lang === "de" ? "Legen Sie die Unterstützung für Werner fest." : "Set Werner's support level.")}</p></div><div className="connection-pill"><span className={online ? "online" : "offline"} />{online ? t.online : t.offline}</div></div>
+
+          {adminSection === "overview" && <>
+            <section className="kpi-grid"><article><span className="kpi-icon blue"><MessageCircle /></span><div><strong>{usageSummary.messagesThisWeek}</strong><small>{t.messagesWeek}</small></div></article><article><span className="kpi-icon green"><Check /></span><div><strong>{usageSummary.activeDays}</strong><small>{t.activeDays}</small></div></article><article><span className="kpi-icon amber"><Bell /></span><div><strong>{importantCount}</strong><small>{t.kpiImportant}</small></div></article><article><span className="kpi-icon blue"><CircleHelp /></span><div><strong>{usageSummary.missingThisWeek}</strong><small>{t.missingReports}</small></div></article></section>
+            <div className="admin-columns"><section className="admin-panel"><div className="panel-heading"><div><h2>{t.messages}</h2><p>{lang === "de" ? "Neueste zuerst" : "Newest first"}</p></div><Bell /></div><div className="compact-list">{messages.length === 0 ? <p className="quiet-empty">{t.noMessages}</p> : messages.slice(0,5).map((message) => <article key={message.id}><div><span className={`priority-dot ${message.priority}`} /> <time>{new Intl.DateTimeFormat(lang === "de" ? "de-DE" : "en-GB", { hour: "2-digit", minute: "2-digit" }).format(new Date(message.sent_at))}</time></div><p>{lang === "de" ? message.body_de : message.body_en}</p>{message.message_receipts?.length ? <span className="read-label"><Check />{t.read}</span> : <button className="read-button" onClick={() => markRead(message)}>{t.markRead}</button>}</article>)}</div></section><section className="admin-panel access-panel"><div className="panel-heading"><div><h2>{lang === "de" ? "Zugangsprofile" : "Access profiles"}</h2><p>{lang === "de" ? "Drei aktive Profile" : "Three active profiles"}</p></div><Users /></div><div className="profile-status-list"><span><UserRound /><strong>Werner</strong><small>{lang === "de" ? "Nutzer" : "User"}</small></span><span><ShieldCheck /><strong>Admin 1</strong><small>{lang === "de" ? "Begleitung" : "Companion"}</small></span><span><ShieldCheck /><strong>Admin 2</strong><small>{lang === "de" ? "Begleitung" : "Companion"}</small></span></div><div className="recommendation-block"><h3><Sparkles />{t.recommendations}</h3><p>{usageSummary.missingThisWeek ? (lang === "de" ? "Prüfen Sie die gemeldeten Lücken und ergänzen Sie passende Wörter unter Inhalte." : "Review reported gaps and add suitable words under Content.") : t.noRecommendations}</p></div></section></div>
+            <section className="usage-panels"><article className="admin-panel cost-controller-panel"><div className="panel-heading"><div><h2>{t.aiController}</h2><p>{usageSummary.budget.ai_enabled ? t.aiUsage : t.aiManualOnly}</p></div><ShieldCheck /></div><div className="controller-status"><strong>{usageSummary.budget.ai_enabled ? t.aiUsage : t.aiLocked}</strong><span>{usageSummary.budget.ai_enabled ? t.aiManualOnly : lang === "de" ? "Normale Wortnah-Nutzung verwendet keine KI-Tokens." : "Normal Wortnah use does not use AI tokens."}</span></div><dl><div><dt>{lang === "de" ? "Anfragen" : "Requests"}</dt><dd>{usageSummary.aiRequests} / {usageSummary.budget.monthly_request_limit}</dd></div><div><dt>Tokens</dt><dd>{usageSummary.aiInputTokens + usageSummary.aiOutputTokens}</dd></div><div><dt>{lang === "de" ? "Kosten" : "Cost"}</dt><dd>{costText} / {new Intl.NumberFormat(lang === "de" ? "de-DE" : "en-GB", { style: "currency", currency: "EUR" }).format(usageSummary.budget.monthly_cost_limit_cents / 100)}</dd></div></dl></article><article className="admin-panel usage-trend-panel"><div className="panel-heading"><div><h2>{t.usageOverTime}</h2><p>{usageSummary.startedAt ? (lang === "de" ? "Seit der ersten echten Nutzung" : "Since first real use") : (lang === "de" ? "Beginnt mit der ersten echten Nutzung" : "Begins with first real use")}</p></div><BarChart3 /></div>{usageSummary.dailyActivity.length ? <div className="usage-bars">{usageSummary.dailyActivity.map((day) => <div key={day.label}><i style={{ height: `${Math.max(6, (day.count / maxDailyActivity) * 100)}%` }} /><span>{day.label}</span><b>{day.count}</b></div>)}</div> : <p className="quiet-empty">{lang === "de" ? "Noch keine reale Nutzung erfasst." : "No real usage recorded yet."}</p>}</article></section>
+          </>}
+
+          {adminSection === "content" && <>
+          <div className="content-area-switch" role="tablist" aria-label={lang === "de" ? "Inhaltsbereich" : "Content area"}><button role="tab" aria-selected={contentArea === "communication"} className={contentArea === "communication" ? "active" : ""} onClick={() => { setContentArea("communication"); closeSearchEditor(); }}><MessageCircle />{lang === "de" ? "Kommunikation" : "Communication"}</button><button role="tab" aria-selected={contentArea === "search"} className={contentArea === "search" ? "active" : ""} onClick={() => { setContentArea("search"); closeChoiceEditor(); }}><Search />{t.search}</button></div>
+          {contentArea === "communication" && <section className="admin-panel content-manager">
+            <div className="content-context-header">
+              <nav className="admin-breadcrumb" aria-label={lang === "de" ? "Aktueller Bereich" : "Current location"}><House /><span>{t.dashboard}</span><ChevronRight /><span>{lang === "de" ? "Kommunikation" : "Communication"}</span><ChevronRight /><strong>{adminLevelLabel}</strong></nav>
+              <span className="level-badge">{adminLevelLabel}</span>
+            </div>
+            <section className="admin-patient-preview" aria-label={lang === "de" ? "Vorschau für Werner" : "Preview for Werner"}>
+              <div><Eye /><span><strong>{lang === "de" ? "So sieht Werner diesen Bereich" : "How Werner sees this area"}</strong><small>{lang === "de" ? `Vorschau mit ${choiceCount} Feldern` : `Preview with ${choiceCount} choices`}</small></span></div>
+              <div className="admin-preview-chips">{adminPreviewLabels.map((label, index) => <span key={`${label}-${index}`}>{label}</span>)}</div>
+            </section>
+            <div className="content-toolbar">
+              <div className="segment-control">{(["purpose","topic","detail"] as ChoiceLevel[]).map((level, index) => <button key={level} className={contentLevel === level ? "active" : ""} onClick={() => { setContentLevel(level); closeChoiceEditor(); }}><small>{lang === "de" ? "Ebene" : "Level"} {index + 1}</small>{level === "purpose" ? (lang === "de" ? "Bereiche" : "Purposes") : level === "topic" ? (lang === "de" ? "Themen" : "Topics") : (lang === "de" ? "Wörter & Sätze" : "Words & phrases")}</button>)}</div>
+              <div className="content-actions"><label className="admin-search"><Search /><input value={contentSearch} onChange={(event) => setContentSearch(event.target.value)} placeholder={lang === "de" ? "Wort suchen …" : "Search words …"} /></label><button className="primary-button" onClick={() => startChoiceEditor()}><Plus />{lang === "de" ? "Wort hinzufügen" : "Add entry"}</button></div>
+            </div>
+            {(creatingChoice || editingChoice) && <div className="editor-card">
+              <div className="editor-heading"><div><span className="level-badge">{adminLevelLabel}</span><h2>{editingChoice ? (lang === "de" ? "Eintrag bearbeiten" : "Edit entry") : (lang === "de" ? "Eintrag hinzufügen" : "Add entry")}</h2><p>{purposeLabel(contentLevel === "purpose" ? null : choiceDraft.purpose_key)}{contentLevel === "detail" && choiceDraft.topic_key ? ` › ${topicLabel(choiceDraft.topic_key)}` : ""}</p></div><button onClick={closeChoiceEditor}>{lang === "de" ? "Abbrechen" : "Cancel"}</button></div>
+              <div className="editor-grid"><label>{lang === "de" ? "Deutsch" : "German"}<input value={choiceDraft.label_de} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, label_de: event.target.value }))} /></label><label>{lang === "de" ? "Englisch (optional)" : "English (optional)"}<input value={choiceDraft.label_en} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, label_en: event.target.value }))} /></label>{contentLevel !== "purpose" && <label>{lang === "de" ? "Bereich" : "Purpose"}<select value={choiceDraft.purpose_key} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, purpose_key: event.target.value, topic_key: "" }))}>{purposes.map((item) => <option key={item.id} value={item.id}>{item.de}</option>)}{customPurposes.map((item) => <option key={item.id} value={item.option_key}>{item.label_de}</option>)}</select></label>}{contentLevel === "detail" && <label>{lang === "de" ? "Thema" : "Topic"}<select value={choiceDraft.topic_key} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, topic_key: event.target.value }))}><option value="">{lang === "de" ? "Thema wählen" : "Choose topic"}</option>{filteredTopicOptions.map((item) => <option key={item.id} value={item.option_key}>{item.label_de}</option>)}</select></label>}<label>{lang === "de" ? "Reihenfolge" : "Order"}<input type="number" min="0" value={choiceDraft.sort_order} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, sort_order: Number(event.target.value) }))} /></label><label>{lang === "de" ? "Priorität" : "Priority"}<select value={choiceDraft.priority} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, priority: event.target.value as CustomChoice["priority"] }))}><option value="high">{lang === "de" ? "Hoch" : "High"}</option><option value="medium">{lang === "de" ? "Mittel" : "Medium"}</option><option value="low">{lang === "de" ? "Niedrig" : "Low"}</option></select></label></div>
+              <div className="editor-toggles"><button className={choiceDraft.is_published ? "on" : ""} onClick={() => setChoiceDraft((draft) => ({ ...draft, is_published: !draft.is_published }))}>{choiceDraft.is_published ? <Eye /> : <EyeOff />}{lang === "de" ? "Für Werner sichtbar" : "Visible to Werner"}</button>{contentLevel === "detail" && <button className={choiceDraft.practice_eligible ? "on" : ""} onClick={() => setChoiceDraft((draft) => ({ ...draft, practice_eligible: !draft.practice_eligible }))}>{choiceDraft.practice_eligible ? <ToggleRight /> : <ToggleLeft />}{lang === "de" ? "Auch zum Üben" : "Also for practice"}</button>}</div>{error && <p className="form-error">{error}</p>}<button className="primary-button save-editor" onClick={saveChoice}><Check />{lang === "de" ? "Speichern" : "Save"}</button>
+            </div>}
+            <div className="manager-summary"><strong>{contentLoading ? "…" : adminChoices.length}</strong><span>{lang === "de" ? `Einträge auf ${adminLevelLabel}` : `entries on ${adminLevelLabel}`}</span></div>
+            <div className="manager-list">{!contentLoading && adminChoices.length === 0 ? <p className="quiet-empty">{lang === "de" ? "Keine Einträge gefunden." : "No entries found."}</p> : adminChoices.map((item, index) => <article key={item.id} className={!item.is_published ? "hidden-item" : ""}>
+              <GripVertical className="drag-handle" aria-hidden="true" />
+              <button className="publish-toggle" onClick={() => toggleChoicePublished(item)} aria-label={item.is_published ? (lang === "de" ? "Ausblenden" : "Hide") : (lang === "de" ? "Einblenden" : "Show")}>{item.is_published ? <Eye /> : <EyeOff />}</button>
+              <div><strong>{item.label_de}</strong><small>{purposeLabel(item.purpose_key)}{item.topic_key ? ` › ${topicLabel(item.topic_key)}` : ""} · {item.label_en || (lang === "de" ? "Keine englische Übersetzung" : "No English translation")}</small></div>
+              <div className="reorder-actions"><button onClick={() => void moveChoice(item, -1)} disabled={Boolean(contentSearch.trim()) || index === 0} aria-label={lang === "de" ? "Nach oben" : "Move up"}><ArrowUp /></button><button onClick={() => void moveChoice(item, 1)} disabled={Boolean(contentSearch.trim()) || index === adminChoices.length - 1} aria-label={lang === "de" ? "Nach unten" : "Move down"}><ArrowDown /></button></div>
+              <span className={`priority-tag ${item.priority}`}>{item.priority}</span><button className="icon-action" onClick={() => startChoiceEditor(item)} aria-label={lang === "de" ? "Bearbeiten" : "Edit"}><Pencil /></button><button className="icon-action danger" onClick={() => deleteChoice(item)} aria-label={lang === "de" ? "Löschen" : "Delete"}><Trash2 /></button>
+            </article>)}</div>
+          </section>}
+
+          {contentArea === "search" && <section className="admin-panel content-manager search-manager">
+            <div className="content-context-header">
+              <nav className="admin-breadcrumb" aria-label={lang === "de" ? "Aktueller Bereich" : "Current location"}><House /><span>{t.dashboard}</span><ChevronRight /><span>{t.search}</span><ChevronRight /><strong>{lang === "de" ? `Ebene ${adminSearchLevel}` : `Level ${adminSearchLevel}`}</strong></nav>
+              <span className="level-badge">{lang === "de" ? `Ebene ${adminSearchLevel} von 4` : `Level ${adminSearchLevel} of 4`}</span>
+            </div>
+            <section className="admin-patient-preview" aria-label={lang === "de" ? "Vorschau für Werner" : "Preview for Werner"}>
+              <div><Eye /><span><strong>{lang === "de" ? "So sieht Werner diese Suchebene" : "How Werner sees this search level"}</strong><small>{lang === "de" ? `Vorschau mit ${choiceCount} Feldern` : `Preview with ${choiceCount} choices`}</small></span></div>
+              <div className="admin-preview-chips">{adminSearchPreviewLabels.length ? adminSearchPreviewLabels.map((label, index) => <span key={`${label}-${index}`}>{label}</span>) : <small>{lang === "de" ? "Keine sichtbaren Einträge auf dieser Ebene." : "No visible entries on this level."}</small>}</div>
+            </section>
+            <div className="content-toolbar">
+              <div className="segment-control search-level-tabs">{([1,2,3,4] as const).map((level) => <button key={level} className={adminSearchLevel === level ? "active" : ""} onClick={() => { setAdminSearchLevel(level); closeSearchEditor(); }}><small>{lang === "de" ? "Ebene" : "Level"}</small>{level}</button>)}</div>
+              <div className="content-actions"><label className="admin-search"><Search /><input value={adminSearchText} onChange={(event) => setAdminSearchText(event.target.value)} placeholder={lang === "de" ? "Suchbegriff finden …" : "Find search entry …"} /></label><button className="primary-button" onClick={() => startSearchEditor()}><Plus />{lang === "de" ? "Suchbegriff hinzufügen" : "Add search entry"}</button></div>
+            </div>
+            {(creatingSearchNode || editingSearchNode) && <div className="editor-card">
+              <div className="editor-heading"><div><span className="level-badge">{lang === "de" ? `Ebene ${adminSearchLevel}` : `Level ${adminSearchLevel}`}</span><h2>{editingSearchNode ? (lang === "de" ? "Sucheintrag bearbeiten" : "Edit search entry") : (lang === "de" ? "Sucheintrag hinzufügen" : "Add search entry")}</h2><p>{searchNodeLabel(adminSearchLevel === 1 ? null : searchDraft.parent_key)}</p></div><button onClick={closeSearchEditor}>{lang === "de" ? "Abbrechen" : "Cancel"}</button></div>
+              <div className="editor-grid"><label>{lang === "de" ? "Deutsch" : "German"}<input value={searchDraft.label_de} onChange={(event) => setSearchDraft((draft) => ({ ...draft, label_de: event.target.value }))} /></label><label>{lang === "de" ? "Englisch (optional)" : "English (optional)"}<input value={searchDraft.label_en} onChange={(event) => setSearchDraft((draft) => ({ ...draft, label_en: event.target.value }))} /></label>{adminSearchLevel > 1 && <label>{lang === "de" ? "Übergeordneter Bereich" : "Parent section"}<select value={searchDraft.parent_key} onChange={(event) => setSearchDraft((draft) => ({ ...draft, parent_key: event.target.value }))}><option value="">{lang === "de" ? "Bereich wählen" : "Choose section"}</option>{searchParentOptions.map((item) => <option key={item.option_key} value={item.option_key}>{item.label_de}</option>)}</select></label>}<label>{lang === "de" ? "Reihenfolge" : "Order"}<input type="number" min="0" value={searchDraft.sort_order} onChange={(event) => setSearchDraft((draft) => ({ ...draft, sort_order: Number(event.target.value) }))} /></label><label>{lang === "de" ? "Fertiger deutscher Suchsatz (nur am Ende)" : "Final German search phrase (leaf only)"}<input value={searchDraft.query_de} onChange={(event) => setSearchDraft((draft) => ({ ...draft, query_de: event.target.value }))} /></label><label>{lang === "de" ? "Fertiger englischer Suchsatz (optional)" : "Final English search phrase (optional)"}<input value={searchDraft.query_en} onChange={(event) => setSearchDraft((draft) => ({ ...draft, query_en: event.target.value }))} /></label></div>
+              <div className="editor-toggles"><button className={searchDraft.is_published ? "on" : ""} onClick={() => setSearchDraft((draft) => ({ ...draft, is_published: !draft.is_published }))}>{searchDraft.is_published ? <Eye /> : <EyeOff />}{lang === "de" ? "Für Werner sichtbar" : "Visible to Werner"}</button></div>{error && <p className="form-error">{error}</p>}<button className="primary-button save-editor" onClick={saveSearchNode}><Check />{lang === "de" ? "Speichern" : "Save"}</button>
+            </div>}
+            <div className="manager-summary"><strong>{contentLoading ? "…" : filteredAdminSearchNodes.length}</strong><span>{lang === "de" ? `Einträge auf Ebene ${adminSearchLevel}` : `entries on level ${adminSearchLevel}`}</span></div>
+            <div className="manager-list search-manager-list">{!contentLoading && filteredAdminSearchNodes.length === 0 ? <p className="quiet-empty">{lang === "de" ? "Keine Einträge gefunden." : "No entries found."}</p> : filteredAdminSearchNodes.map((item) => <article key={item.id} className={!item.is_published ? "hidden-item" : ""}><button className="publish-toggle" onClick={() => toggleSearchPublished(item)} aria-label={item.is_published ? (lang === "de" ? "Ausblenden" : "Hide") : (lang === "de" ? "Einblenden" : "Show")}>{item.is_published ? <Eye /> : <EyeOff />}</button><div><strong>{item.label_de}</strong><small>{adminSearchLevel > 1 ? `${searchNodeLabel(item.parent_key)} · ` : ""}{item.query_de || (lang === "de" ? "Weiter zur nächsten Ebene" : "Continues to the next level")}</small></div><button className="icon-action" onClick={() => startSearchEditor(item)} aria-label={lang === "de" ? "Bearbeiten" : "Edit"}><Pencil /></button><button className="icon-action danger" onClick={() => deleteSearchNode(item)} aria-label={lang === "de" ? "Löschen" : "Delete"}><Trash2 /></button></article>)}</div>
+          </section>}
+          </>}
+
+          {adminSection === "practice" && <section className="admin-panel content-manager"><div className="content-toolbar"><div><h2>{lang === "de" ? "Übungsinhalte" : "Practice content"}</h2><p>{lang === "de" ? `${practiceItems.length} Wörter und Sätze` : `${practiceItems.length} words and phrases`}</p></div><button className="primary-button" onClick={() => startPracticeEditor()}><Plus />{lang === "de" ? "Neue Übung" : "New practice"}</button></div>{(creatingPractice || editingPractice) && <div className="editor-card"><div className="editor-heading"><h2>{editingPractice ? (lang === "de" ? "Übung bearbeiten" : "Edit practice") : (lang === "de" ? "Übung hinzufügen" : "Add practice")}</h2><button onClick={closePracticeEditor}>{lang === "de" ? "Abbrechen" : "Cancel"}</button></div><div className="editor-grid"><label>{lang === "de" ? "Deutsch" : "German"}<input value={practiceDraft.label_de} onChange={(event) => setPracticeDraft((draft) => ({ ...draft, label_de: event.target.value }))} /></label><label>{lang === "de" ? "Englisch (optional)" : "English (optional)"}<input value={practiceDraft.label_en} onChange={(event) => setPracticeDraft((draft) => ({ ...draft, label_en: event.target.value }))} /></label><label>{lang === "de" ? "Schwierigkeit" : "Difficulty"}<select value={practiceDraft.difficulty} onChange={(event) => setPracticeDraft((draft) => ({ ...draft, difficulty: event.target.value as PracticeItem["difficulty"] }))}><option value="easy">{lang === "de" ? "Leicht" : "Easy"}</option><option value="medium">{lang === "de" ? "Mittel" : "Medium"}</option></select></label><label>{lang === "de" ? "Reihenfolge" : "Order"}<input type="number" min="0" value={practiceDraft.sort_order} onChange={(event) => setPracticeDraft((draft) => ({ ...draft, sort_order: Number(event.target.value) }))} /></label></div>{error && <p className="form-error">{error}</p>}<button className="primary-button save-editor" onClick={savePracticeItem}><Check />{lang === "de" ? "Speichern" : "Save"}</button></div>}<div className="manager-list practice-manager-list">{practiceItems.map((item) => <article key={item.id}><button className="practice-preview" onClick={() => speak(item.label_de)} aria-label={lang === "de" ? "Anhören" : "Listen"}><Volume2 /></button><div><strong>{item.label_de}</strong><small>{item.label_en || (lang === "de" ? "Keine englische Übersetzung" : "No English translation")}</small></div><span className={`difficulty-tag ${item.difficulty}`}>{item.difficulty === "easy" ? (lang === "de" ? "Leicht" : "Easy") : (lang === "de" ? "Mittel" : "Medium")}</span><button className="icon-action" onClick={() => startPracticeEditor(item)} aria-label={lang === "de" ? "Bearbeiten" : "Edit"}><Pencil /></button><button className="icon-action danger" onClick={() => deletePracticeItem(item)} aria-label={lang === "de" ? "Löschen" : "Delete"}><Trash2 /></button></article>)}</div></section>}
+
+          {adminSection === "activity" && <section className="admin-panel activity-panel"><div className="panel-heading"><div><h2>{lang === "de" ? "Aktivitätsverlauf" : "Activity timeline"}</h2><p>{lang === "de" ? "Neueste Aktivität zuerst" : "Newest activity first"}</p></div><ClipboardCheck /></div><div className="activity-timeline">{activityEvents.length === 0 ? <p className="quiet-empty">{lang === "de" ? "Noch keine Aktivität erfasst." : "No activity recorded yet."}</p> : activityEvents.map((event) => <article key={event.id}><span className={`activity-dot ${event.event_type}`} /><div><strong>{activityLabel(event)}</strong><small>{event.screen_key ? event.screen_key.replaceAll("_", " ") : (lang === "de" ? "Wortnah" : "Wortnah")}</small></div><time>{new Intl.DateTimeFormat(lang === "de" ? "de-DE" : "en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(event.occurred_at))}</time></article>)}</div></section>}
+
+          {adminSection === "settings" && <section className="admin-panel admin-settings-panel"><div className="panel-heading"><div><h2>{lang === "de" ? "Maximale Auswahl" : "Maximum choices"}</h2><p>{lang === "de" ? "Werner kann selbst eine Zahl bis zu diesem Maximum wählen." : "Werner can choose any count up to this maximum."}</p></div><Settings2 /></div><div className="maximum-choice-grid">{availablePatientChoiceCounts(DEFAULT_ADMIN_CHOICE_MAXIMUM).map((count) => <button key={count} className={adminChoiceMaximum === count ? "active" : ""} onClick={() => void saveAdminChoiceMaximum(count)}><strong>{count}</strong><span>{lang === "de" ? "Felder" : "choices"}</span></button>)}</div>{error && <p className="form-error">{error}</p>}<div className="settings-note"><ShieldCheck /><p>{lang === "de" ? "Die Einstellung gilt gemeinsam für Kommunikation, Internetsuche und Üben." : "This setting applies to communication, internet search and practice."}</p></div></section>}
         </div>
       </div>
     </main>

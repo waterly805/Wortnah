@@ -4,20 +4,22 @@
 
 Wortnah is a German-first accessible communication web app with optional supported speech practice. It is designed for modern browsers on Android, iPhone/iPad, Windows, macOS, and Linux and can be installed as a Progressive Web App.
 
-## Current vertical slice
+## Current application
 
-- Two interfaces: `Mein Bereich` and `Begleitung`
-- Secure first-device enrollment through Supabase Auth
+- Three fixed pilot profiles: Werner, Admin 1, and Admin 2
+- Separate profile access and daily four-digit PIN checks
 - Four-digit daily PIN stored only as a salted server-side hash
-- Purpose-first guided message creation
+- Patient modes for Kommunikation, Internet suchen, and Üben
+- Purpose-first guided communication using shared, companion-managed content
 - First-tap listen, second-tap confirm interaction
+- Patient choice layouts from 2 through 12, bounded by the companion maximum
 - German and English interface switching
-- Browser speech synthesis with synchronized highlighting
+- Approved private MP3 audio first, cached server-side ElevenLabs second, and German device voice fallback
 - Normal, Important, and Very Important priorities
-- Shared message board and read acknowledgement
-- Basic supported listen-and-repeat practice
+- Reusable patient message history and read acknowledgement
+- Companion-managed listen-and-repeat therapy content
 - User display, audio, and choice-count preferences
-- Companion dashboard and one-time user invitation code
+- Companion content management, activity timeline, messages, settings, and usage overview
 - Installable PWA shell with connection-loss recovery
 
 ## Durable project assets
@@ -26,7 +28,7 @@ Wortnah is a German-first accessible communication web app with optional support
 - Live accounts, permissions, messages, settings, and KPI events: Supabase Frankfurt
 - Product specification, schema copies, source snapshots, and handoff notes: OneDrive `ChatGPT Work Personal/Wortnah`
 
-This repository currently starts from the latest complete editable recovery archive, version 0.3.0. The deployed application is newer, so compiled releases and the live app are comparison evidence rather than editable source. See `docs/SOURCE-RECOVERY-2026-09-06.md` before changing production.
+The current editable application is version 0.4.0. See `docs/IMPLEMENTATION-LOG-2026-09-07.md` and `docs/RELEASE-NOTES-0.4.0.md` for verification and rollout status.
 
 The OneDrive archive is a recovery and documentation layer. It is not queried by the live app and does not replace Supabase for transactional data.
 
