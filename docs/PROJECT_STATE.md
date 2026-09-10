@@ -158,6 +158,40 @@ Verification required:
 Notes / decisions:
 - Access codes, daily PINs, tokens and temporary credentials must never be written to GitHub, OneDrive, logs or chat.
 
+### FEATURE-001 — Natural concise reading and simple choice-count control
+
+Status: Planned; discussion in progress. Do not implement until the user confirms the final behavior.
+
+Goal:
+Give Werner natural German speech that reads only the information needed to make the current choice, with a one-tap control for changing how many choices are shown.
+
+Acceptance criteria:
+- [ ] Diagnose the live robotic-audio report at the actual playback boundary and identify whether the heard sound came from a reviewed private MP3, generated private MP3, or device-voice fallback before changing the pipeline.
+- [ ] Communication, guided-search and practice playback uses a natural German voice under the existing reviewed-MP3, generated-cache, device-fallback order.
+- [ ] Automatic page reading speaks the main prompt followed by the labels of the choices currently visible, in visual order.
+- [ ] For the example screen, the spoken content is equivalent to: `Worum geht es? Mein Tag. Familie und Menschen. Wie ich mich fühle. Gesundheit und Termine.`
+- [ ] Automatic page reading does not speak helper instructions, navigation, page counters, status text, or control labels such as Back, Repeat, Audio, and selection instructions.
+- [ ] Werner changes the visible choice count with one simple control that advances through `2 → 4 → 6 → 8 → 10 → 12`, stopping at the companion-set maximum.
+- [ ] If the companion maximum is below 12, values above that maximum are unavailable.
+- [ ] The choice-count control remains large, understandable and usable on phone, tablet and desktop.
+- [ ] Focused tests cover concise auto-read content, audio-source selection and the allowed count sequence; the behavior is then checked on the live Site.
+
+Affected areas:
+- Frontend: Werner auto-read content, audio feedback and choice-count control.
+- Backend/Supabase: Inspect current audio response metadata and private asset matching; change only if diagnosis proves it is necessary.
+- Database/migrations: No change expected.
+- Audio: Reviewed private MP3, generated cache and German device fallback diagnosis.
+- Deployment: A new verified Site version will be required after implementation.
+
+Verification required:
+- [ ] Reproduce and identify the source of the robotic live audio.
+- [ ] Focused automated checks.
+- [ ] Production build and related regression checks.
+- [ ] Live Werner check with real playback and each permitted choice count.
+
+Open decision:
+- [ ] Decide whether one more click at the companion maximum loops back to 2 or stays at the maximum.
+
 ### Next approved work
 
 Add the next agreed feature here using the task format from `docs/WORKFLOW.md` before implementation.
@@ -165,6 +199,8 @@ Add the next agreed feature here using the task format from `docs/WORKFLOW.md` b
 ## 7. Known issues / uncertainties
 
 - The deployed 0.5.1 source is verified, but authenticated live acceptance remains incomplete until a user enters the two login values privately in the browser.
+- The user reports that current live playback still sounds robotic; the actual audio source heard has not yet been diagnosed.
+- Current automatic page reading is reported to include secondary instructions and controls instead of only the main prompt and visible choice labels.
 - GitHub `main` contains the verified 0.5.1 implementation. The live Site uses the same runtime files under the separately recorded Site source commit.
 - `package.json` currently reports the starter package version `0.1.0`; app release tracking is handled by Wortnah release documentation. Do not infer the product release from `package.json` alone.
 
