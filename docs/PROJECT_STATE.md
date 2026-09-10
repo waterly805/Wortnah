@@ -120,7 +120,7 @@ Core services:
 - GitHub repository: `waterly805/Wortnah`
 - Supabase backend
 - OpenAI Sites deployment
-- Custom public hostname: `www.wort-nah.com` (registered with Sites; GoDaddy DNS validation and SSL activation pending)
+- Custom public hostname: `https://www.wort-nah.com` (active with HTTPS)
 - Private Wortnah audio storage
 - ElevenLabs server-side generation/cache path
 
@@ -132,7 +132,7 @@ The repository is the canonical development record. A local clone is a working c
 
 ### RELEASE-0.5.1 — Authenticated live acceptance
 
-Status: In progress
+Status: Verified
 
 Goal:
 Verify the deployed 0.5.1 behavior end to end without recording credentials or leaving disposable data.
@@ -202,9 +202,9 @@ Serve the existing public Wortnah Site at `https://www.wort-nah.com` while keepi
 
 Acceptance criteria:
 - [x] `www.wort-nah.com` is registered with the existing Wortnah Site.
-- [x] The required CNAME and TXT validation records are saved in GoDaddy DNS; the CNAME and ownership TXT are public, and the certificate TXT is propagating between GoDaddy nameservers.
-- [ ] Sites reports the custom domain as active and its SSL status as ready.
-- [ ] `https://www.wort-nah.com` loads the current public Wortnah deployment.
+- [x] The required CNAME and TXT validation records are saved and public in GoDaddy DNS.
+- [x] Sites reports the custom domain and SSL certificate as active.
+- [x] `https://www.wort-nah.com` returns HTTP 200 and visibly loads the current public Wortnah landing page.
 
 Notes / decisions:
 - DNS verification values are supplied directly from Sites to GoDaddy and are not stored in repository documentation.
@@ -219,7 +219,6 @@ Add the next agreed feature here using the task format from `docs/WORKFLOW.md` b
 - The deployed 0.5.1 source is verified, but authenticated live acceptance remains incomplete until a user enters the two login values privately in the browser.
 - The user reports that current live playback still sounds robotic; the actual audio source heard has not yet been diagnosed.
 - Current automatic page reading is reported to include secondary instructions and controls instead of only the main prompt and visible choice labels.
-- `www.wort-nah.com` has an active domain-provider connection, but Sites remains pending while GoDaddy finishes nameserver replication and SSL validation completes.
 - GitHub `main` contains the verified 0.5.1 implementation. The live Site uses the same runtime files under the separately recorded Site source commit.
 - `package.json` currently reports the starter package version `0.1.0`; app release tracking is handled by Wortnah release documentation. Do not infer the product release from `package.json` alone.
 

@@ -233,3 +233,5 @@ Date: 10 September 2026
 - Prepared the required GoDaddy CNAME and TXT records without changing unrelated DNS or storing the returned verification values in repository documentation.
 - Verified the saved GoDaddy records against public and authoritative DNS. The CNAME and ownership TXT resolve correctly; the certificate TXT is present on one GoDaddy authoritative nameserver while replication to the second remains pending.
 - Refreshed Sites and confirmed the custom-domain provider is active with no reported error; SSL remains pending validation, so the custom HTTPS address is not yet ready.
+- Confirmed both GoDaddy authoritative nameservers and a public resolver serve all required records.
+- Confirmed Sites reports the custom domain and SSL certificate as active, both hosting endpoints return HTTP 200, and the visible custom-domain page shows the current Werner, Admin 1 and Admin 2 landing screen.
