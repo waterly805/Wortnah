@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
+import Image from "next/image";
 import {
   ArrowLeft,
   ArrowDown,
@@ -48,11 +49,13 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import {
   DEFAULT_ADMIN_CHOICE_MAXIMUM,
   availablePatientChoiceCounts,
+  nextPatientChoiceCount,
   normalizePatientChoiceCount,
 } from "@/lib/choice-policy";
 import type { PatientChoiceCount } from "@/lib/choice-policy";
 import { requestPrivateVoiceAudio } from "@/lib/audio-playback";
 import { selectNaturalDeviceVoice } from "@/lib/device-voice";
+import { buildConcisePageReading } from "@/lib/page-reading";
 import { childrenOf, fallbackInternetSearchNodes } from "@/lib/internet-search";
 import type { InternetSearchNode } from "@/lib/internet-search";
 import { supabase, supabasePublishableKey, supabaseUrl } from "@/lib/supabase";
@@ -347,7 +350,7 @@ function getDetails(purpose: string, topic: string): Choice[] {
 }
 
 function Logo() {
-  return <span className="wordmark"><span className="wordmark-mark" aria-hidden="true">W</span><span>Wortnah</span></span>;
+  return <span className="wordmark"><Image className="wordmark-logo" src="/wortnah-logo-round.png" width={64} height={64} alt="" aria-hidden="true" priority /><span>Wortnah</span></span>;
 }
 
 function PinPad({ title, hint, stepLabel, submitLabel, cancelLabel, error, busy = false, busyLabel, onComplete, onBack, onInput }: { title: string; hint: string; stepLabel?: string; submitLabel: string; cancelLabel: string; error?: string; busy?: boolean; busyLabel: string; onComplete: (pin: string) => void; onBack: () => void; onInput?: () => void }) {
@@ -386,12 +389,15 @@ function PinPad({ title, hint, stepLabel, submitLabel, cancelLabel, error, busy 
   );
 }
 
-function ChoiceGrid({ choices, lang, selected, speaking, onChoose, count = 4 }: { choices: Choice[]; lang: Lang; selected: string | null; speaking: string | null; onChoose: (choice: Choice) => void; count?: number }) {
+function ChoiceGrid({ choices, lang, selected, speaking, onChoose, onVisibleChoicesChange, count = 4 }: { choices: Choice[]; lang: Lang; selected: string | null; speaking: string | null; onChoose: (choice: Choice) => void; onVisibleChoicesChange?: (choices: Choice[]) => void; count?: number }) {
   const [page, setPage] = useState(0);
   const pageCount = Math.max(1, Math.ceil(choices.length / count));
   const safePage = Math.min(page, pageCount - 1);
   const start = safePage * count;
   const visibleChoices = choices.slice(start, start + count);
+  useEffect(() => {
+    onVisibleChoicesChange?.(choices.slice(start, start + count));
+  }, [choices, count, onVisibleChoicesChange, start]);
   return (
     <div className="choice-carousel">
       <div className={`choice-grid choice-count-${Math.min(count, visibleChoices.length)}`}>
@@ -458,6 +464,10 @@ export function WortnahApp() {
   const privateAudioCache = useRef(new Map<string, Blob>());
   const speechSequenceId = useRef(0);
   const lastAutoReadKey = useRef("");
+  const [visiblePageChoices, setVisiblePageChoices] = useState<Choice[]>([]);
+  const reportVisibleChoices = useCallback((choices: Choice[]) => {
+    setVisiblePageChoices((current) => current.map((choice) => `${choice.id}:${choice.de}:${choice.en}`).join("|") === choices.map((choice) => `${choice.id}:${choice.de}:${choice.en}`).join("|") ? current : choices);
+  }, []);
   const [messages, setMessages] = useState<AppMessage[]>([]);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>(() => {
     if (typeof window === "undefined") return [];
@@ -929,14 +939,8 @@ export function WortnahApp() {
     speechSequenceId.current = sequenceId;
     window.speechSynthesis.cancel();
     const locale = lang === "de" ? "de-DE" : "en-GB";
-    const matchingVoices = availableVoices.filter((voice) => voice.lang.replace("_", "-").toLowerCase() === locale.toLowerCase());
-    const femaleNames = /(anna|katja|helena|marlene|petra|vicki|victoria|amelie|seraphina|sophie|female)/i;
-    const maleNames = /(markus|martin|conrad|hans|stefan|thomas|daniel|male)/i;
-    const preferredPattern = voicePreference === "female" ? femaleNames : voicePreference === "male" ? maleNames : null;
-    const selectedVoice = (preferredPattern && matchingVoices.find((voice) => preferredPattern.test(voice.name)))
-      || matchingVoices.find((voice) => voice.default)
-      || matchingVoices[0];
-    const items = [{ id: "page", text: intro }, ...choices.map((choice, index) => ({ id: choice.id, text: `${index + 1}. ${choice[lang]}` }))];
+    const selectedVoice = selectNaturalDeviceVoice(availableVoices, locale, voicePreference);
+    const items = buildConcisePageReading(intro, choices.map((choice) => ({ id: choice.id, label: choice[lang] })));
     const readNext = (index: number) => {
       if (speechSequenceId.current !== sequenceId || index >= items.length) { setSpeaking(null); return; }
       const item = items[index];
@@ -967,14 +971,13 @@ export function WortnahApp() {
         { id: "home_messages", de: copy.de.messages, en: copy.en.messages },
       ];
     } else if (view === "search") {
-      const levelLabel = searchPath.length
-        ? (lang === "de" ? "Wählen Sie den nächsten Schritt." : "Choose the next step.")
-        : t.search;
-      intro = `${levelLabel} ${t.firstTap}`;
-      choices = currentSearchChoices.slice(0, choiceCount);
+      intro = searchPath.length
+        ? (lang === "de" ? "Wählen Sie den nächsten Schritt" : "Choose the next step")
+        : (lang === "de" ? "Was möchten Sie suchen?" : "What would you like to search?");
+      choices = visiblePageChoices;
     } else if (view === "communicate" && ["purpose", "topic", "detail"].includes(commStep)) {
-      intro = `${commStep === "purpose" ? t.choosePurpose : commStep === "topic" ? t.chooseTopic : t.chooseDetail}. ${t.firstTap}`;
-      choices = currentChoices.slice(0, choiceCount);
+      intro = commStep === "purpose" ? t.choosePurpose : commStep === "topic" ? t.chooseTopic : t.chooseDetail;
+      choices = visiblePageChoices;
     }
     if (!choices.length) { lastAutoReadKey.current = ""; return; }
     const key = `${view}:${commStep}:${lang}:${choiceCount}:${choices.map((choice) => choice.id).join(",")}`;
@@ -982,7 +985,7 @@ export function WortnahApp() {
     lastAutoReadKey.current = key;
     const task = window.setTimeout(() => readChoiceSequence(intro, choices), 450);
     return () => window.clearTimeout(task);
-  }, [audioEnabled, autoReadChoices, choiceCount, commStep, currentChoices, currentSearchChoices, lang, patientChoicesLoading, readChoiceSequence, searchPath.length, t, view]);
+  }, [audioEnabled, autoReadChoices, choiceCount, commStep, lang, patientChoicesLoading, readChoiceSequence, searchPath.length, t, view, visiblePageChoices]);
 
   useEffect(() => () => {
     speechSequenceId.current += 1;
@@ -1451,6 +1454,10 @@ export function WortnahApp() {
     void savePreference({ choice_count: count });
   };
 
+  const cyclePatientFieldCount = () => {
+    choosePatientFieldCount(nextPatientChoiceCount(choiceCount, adminChoiceMaximum));
+  };
+
   const shellHeader = (title?: string, allowBack = false) => (
     <header className="app-header">
       <div className="header-left">{allowBack && role === "companion" && <button className="header-button" onClick={openHome}><ArrowLeft /><span>{t.back}</span></button>}<Logo /></div>
@@ -1458,14 +1465,11 @@ export function WortnahApp() {
       <div className="header-actions">
         {role === "user" && <>
           <button className="header-button round-control" onClick={openHome} aria-label={t.home} title={t.home}><House /><span>{lang === "de" ? "Start" : "Home"}</span></button>
-          <label className="header-button field-count-control" title={lang === "de" ? "Anzahl Felder" : "Number of fields"}>
+          <button className="header-button field-count-control" onClick={cyclePatientFieldCount} aria-label={`${choiceCount} Felder. Antippen für ${nextPatientChoiceCount(choiceCount, adminChoiceMaximum)} Felder.`} title="Anzahl der Felder ändern">
             <Layers3 aria-hidden="true" />
-            <span className="sr-only">{lang === "de" ? "Anzahl Felder" : "Number of fields"}</span>
             <span className="field-count-label">Felder</span>
-            <select value={choiceCount} onChange={(event) => choosePatientFieldCount(Number(event.target.value) as PatientChoiceCount)} aria-label={lang === "de" ? "Anzahl Felder" : "Number of fields"}>
-              {allowedChoiceCounts.map((count) => <option key={count} value={count}>{count}</option>)}
-            </select>
-          </label>
+            <strong>{choiceCount}</strong>
+          </button>
         </>}
         <button className={`header-button round-control audio-${audioMode}`} onClick={cycleAudioMode} aria-label={audioModeLabel} title={audioModeLabel}>{audioMode === "off" ? <VolumeX /> : <Volume2 />}<span>{audioModeLabel}</span></button>
       </div>
@@ -1531,7 +1535,7 @@ export function WortnahApp() {
       <div className="content-wrap communication-content">
         {searchPath.length > 0 && <nav className="search-path" aria-label={lang === "de" ? "Suchpfad" : "Search path"}><button onClick={() => { setSearchPath([]); setSelectedSearch(null); }}>{t.search}</button>{searchPath.map((node, index) => <span key={node.option_key}><ChevronRight /><button onClick={() => { setSearchPath((path) => path.slice(0, index + 1)); setSelectedSearch(null); }}>{lang === "de" ? node.label_de : node.label_en || node.label_de}</button></span>)}</nav>}
         <div className="page-heading"><span className="search-level-pill">{lang === "de" ? "Ebene" : "Level"} {searchPath.length + 1}</span><h1>{searchPath.length ? (lang === "de" ? "Wählen Sie den nächsten Schritt" : "Choose the next step") : (lang === "de" ? "Was möchten Sie suchen?" : "What would you like to search?")}</h1><p>{t.firstTap}</p></div>
-        <ChoiceGrid key={`search-${searchPath.at(-1)?.option_key ?? "root"}-${choiceCount}`} choices={currentSearchChoices} lang={lang} selected={selectedSearch} speaking={speaking} onChoose={chooseSearch} count={choiceCount} />
+        <ChoiceGrid key={`search-${searchPath.at(-1)?.option_key ?? "root"}-${choiceCount}`} choices={currentSearchChoices} lang={lang} selected={selectedSearch} speaking={speaking} onChoose={chooseSearch} onVisibleChoicesChange={reportVisibleChoices} count={choiceCount} />
         <button className="missing-topic-button" onClick={() => setShowMissingChoices((value) => !value)}><Plus />{t.missingTopic}</button>
         {showMissingChoices && <section className="missing-choice-panel"><h2>{t.whatMissing}</h2><div>{[{ id: "topic", de: "Suchthema fehlt", en: "Search topic is missing" }, { id: "result", de: "Passendes Ergebnis fehlt", en: "The right result is missing" }, { id: "help", de: "Ich brauche Hilfe", en: "I need help" }].map((item) => <button key={item.id} onClick={() => reportMissing(`search_${item.id}`)}>{item[lang]}</button>)}</div></section>}
         {searchHistory.length > 0 && <section className="search-history" aria-label={lang === "de" ? "Letzte Suchen" : "Recent searches"}><h2>{lang === "de" ? "Letzte Suchen" : "Recent searches"}</h2><div>{searchHistory.slice(0, 5).map((item) => <article key={item.id}><span>{item.text}</span><button onClick={() => speak(item.text, `history-${item.id}`)} aria-label={lang === "de" ? "Anhören" : "Listen"}><Volume2 /></button><button onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(item.text)}`, "_blank", "noopener,noreferrer")}><Search />{lang === "de" ? "Suchen" : "Search"}</button></article>)}</div></section>}
@@ -1558,7 +1562,7 @@ export function WortnahApp() {
           {commStep !== "success" && <div className="progress-row"><span className={commStep === "purpose" ? "active" : "done"}>1</span><i /><span className={commStep === "topic" ? "active" : ["detail","review","practice","priority"].includes(commStep) ? "done" : ""}>2</span><i /><span className={commStep === "detail" ? "active" : ["review","practice","priority"].includes(commStep) ? "done" : ""}>3</span><i /><span className={["review","practice","priority"].includes(commStep) ? "active" : ""}>4</span></div>}
           <div className="page-heading"><h1>{title}</h1>{["purpose","topic","detail"].includes(commStep) && <p>{t.firstTap}</p>}</div>
           {patientChoicesLoading && ["topic","detail"].includes(commStep) && <div className="choice-loading" role="status"><div className="loading-bar" /><span>{lang === "de" ? "Auswahl wird vorbereitet …" : "Preparing choices …"}</span></div>}
-          {["purpose","topic","detail"].includes(commStep) && <ChoiceGrid key={`communication-${commStep}-${purpose?.id ?? "root"}-${topic?.id ?? "root"}-${choiceCount}`} choices={currentChoices} lang={lang} selected={selected} speaking={speaking} onChoose={chooseCommunication} count={choiceCount} />}
+          {["purpose","topic","detail"].includes(commStep) && <ChoiceGrid key={`communication-${commStep}-${purpose?.id ?? "root"}-${topic?.id ?? "root"}-${choiceCount}`} choices={currentChoices} lang={lang} selected={selected} speaking={speaking} onChoose={chooseCommunication} onVisibleChoicesChange={reportVisibleChoices} count={choiceCount} />}
           {commStep !== "success" && <button className="missing-topic-button" onClick={() => setShowMissingChoices((open) => !open)} aria-expanded={showMissingChoices}><CircleHelp />{t.missingTopic}</button>}
           {showMissingChoices && commStep !== "success" && <section className="missing-choice-panel" aria-label={t.whatMissing}><h2>{t.whatMissing}</h2><div>{missingChoices.map((item) => <button key={item.id} onClick={() => void reportMissing(item.id)}>{item[lang]}</button>)}</div></section>}
           {status && view === "communicate" && <p className="inline-status">{status}</p>}

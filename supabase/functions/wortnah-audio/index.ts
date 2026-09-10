@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 const APP_ORIGINS = new Set([
   "https://wortnah-app.danny-ly-1897.chatgpt.site",
   "https://wortnah-kommunikation.danny-ly-1897.chatgpt.site",
+  "https://www.wort-nah.com",
 ]);
 const BUCKET = "wortnah-voice-audio";
 const VOICE_ID = "gVOibprogMfmHVVyo5r6";

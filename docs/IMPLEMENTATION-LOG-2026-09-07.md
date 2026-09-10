@@ -235,3 +235,15 @@ Date: 10 September 2026
 - Refreshed Sites and confirmed the custom-domain provider is active with no reported error; SSL remains pending validation, so the custom HTTPS address is not yet ready.
 - Confirmed both GoDaddy authoritative nameservers and a public resolver serve all required records.
 - Confirmed Sites reports the custom domain and SSL certificate as active, both hosting endpoints return HTTP 200, and the visible custom-domain page shows the current Werner, Admin 1 and Admin 2 landing screen.
+
+## Batch 39: Wortnah 0.5.2 custom-origin, reading and branding repair
+
+Date: 10 September 2026
+
+- Added the active custom hostname to the login and both private-audio Edge Function allowlists.
+- Deployed `pilot-login` version 17, `wortnah-audio` version 3, and `wortnah-audio-import` version 3, then confirmed all three live preflight responses return the custom origin.
+- Reduced automatic page reading to the main heading and currently visible card labels and reused the natural German device-voice selector for that sequence.
+- Replaced the patient header dropdown with one button that cycles through the Admin-bounded 2/4/6/8/10/12 sequence.
+- Added the supplied mountain-and-hiker identity as a round visible and installable app logo.
+- Corrected narrow-screen role-card shrinking and macOS GNU timeout detection.
+- Passed lint, the production build, and all 37 automated checks.

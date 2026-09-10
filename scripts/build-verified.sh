@@ -7,7 +7,8 @@ if [[ "${SITES_ENV_READY:-}" != "1" ]]; then
   exec "${script_dir}/sites-env.sh" -- "$0" "$@"
 fi
 
-command -v timeout || {
+timeout_command="$(command -v timeout || command -v gtimeout || true)"
+[[ -n "${timeout_command}" ]] || {
   echo "build-verified.sh requires GNU timeout." >&2
   exit 69
 }
@@ -19,7 +20,7 @@ if [[ ! -x "${vinext}" ]]; then
 fi
 
 echo "Running bounded vinext build..."
-timeout \
+"${timeout_command}" \
   --signal=TERM \
   --kill-after="${SITES_BUILD_KILL_AFTER:-10s}" \
   "${SITES_BUILD_TIMEOUT:-3m}" \

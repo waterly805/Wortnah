@@ -13,9 +13,9 @@ export const metadata: Metadata = {
   },
   formatDetection: { telephone: false },
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
-    apple: "/favicon.svg",
+    icon: "/wortnah-logo-round-192.png",
+    shortcut: "/wortnah-logo-round-192.png",
+    apple: "/wortnah-logo-round-192.png",
   },
 };
 

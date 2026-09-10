@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 const allowedOrigins = new Set([
   "https://wortnah-app.danny-ly-1897.chatgpt.site",
   "https://wortnah-kommunikation.danny-ly-1897.chatgpt.site",
+  "https://www.wort-nah.com",
 ]);
 function cors(request: Request) {
   const origin = request.headers.get("origin") ?? "";

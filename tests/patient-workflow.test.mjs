@@ -37,7 +37,25 @@ test("automatic page reading is saved and uses the credit-free device voice", ()
   const sequence = appSource.slice(sequenceStart, sequenceEnd);
   assert.match(sequence, /SpeechSynthesisUtterance/);
   assert.match(sequence, /utterance\.onend = \(\) => readNext\(index \+ 1\)/);
+  assert.match(sequence, /selectNaturalDeviceVoice/);
+  assert.match(sequence, /buildConcisePageReading/);
   assert.doesNotMatch(sequence, /requestPrivateVoiceAudio/);
+});
+
+test("automatic reading excludes helper copy and follows the visible carousel page", () => {
+  const autoReadStart = appSource.indexOf('if (view === "home")');
+  const autoReadEnd = appSource.indexOf("useEffect(() => () =>", autoReadStart);
+  const autoReadFlow = appSource.slice(autoReadStart, autoReadEnd);
+  assert.match(autoReadFlow, /choices = visiblePageChoices/);
+  assert.doesNotMatch(autoReadFlow, /t\.firstTap/);
+  assert.match(appSource, /onVisibleChoicesChange=\{reportVisibleChoices\}/);
+});
+
+test("the header field control advances on one button tap", () => {
+  assert.match(appSource, /const cyclePatientFieldCount/);
+  assert.match(appSource, /nextPatientChoiceCount\(choiceCount, adminChoiceMaximum\)/);
+  assert.match(appSource, /onClick=\{cyclePatientFieldCount\}/);
+  assert.doesNotMatch(appSource, /<select value=\{choiceCount\}/);
 });
 
 test("profile and PIN checks cannot be submitted twice while loading", () => {

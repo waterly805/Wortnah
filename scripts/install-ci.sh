@@ -11,7 +11,8 @@ command -v flock || {
   echo "install-ci.sh requires Linux flock." >&2
   exit 69
 }
-command -v timeout || {
+timeout_command="$(command -v timeout || command -v gtimeout || true)"
+[[ -n "${timeout_command}" ]] || {
   echo "install-ci.sh requires GNU timeout." >&2
   exit 69
 }
@@ -162,7 +163,7 @@ npm_ci_args=(ci --cache "${expected_cache}")
 if [[ "${use_seeded_cache}" == "1" ]]; then
   npm_ci_args+=(--prefer-offline)
 fi
-timeout \
+"${timeout_command}" \
   --signal=TERM \
   --kill-after="${SITES_INSTALL_KILL_AFTER:-15s}" \
   "${SITES_INSTALL_TIMEOUT:-8m}" \

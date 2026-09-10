@@ -3,7 +3,7 @@
 > **Purpose:** This is the single live operational source of truth for what is currently implemented, verified, in progress, and safe to release. Read this file before substantial Wortnah work and update it before considering that work complete.
 
 Last repository review: 10 September 2026
-Current app release: **0.5.1**
+Current app release: **0.5.1**; **0.5.2 implementation in progress**
 Canonical 0.5.1 implementation commit: `9a6c092b00f4eecb8de58fd198baa848f0c91d70`
 GitHub baseline before synchronization: `c847939df324af498945e8ed8fe7bd52e5a0ea2a`
 Production state recorded: **10 September 2026**
@@ -132,7 +132,7 @@ The repository is the canonical development record. A local clone is a working c
 
 ### RELEASE-0.5.1 — Authenticated live acceptance
 
-Status: Verified
+Status: In progress — DNS, HTTPS, and backend origin compatibility are active; authenticated live acceptance remains.
 
 Goal:
 Verify the deployed 0.5.1 behavior end to end without recording credentials or leaving disposable data.
@@ -161,21 +161,21 @@ Notes / decisions:
 
 ### FEATURE-001 — Natural concise reading and simple choice-count control
 
-Status: Planned; discussion in progress. Do not implement until the user confirms the final behavior.
+Status: Implemented and locally verified; production Site deployment and authenticated checks remain.
 
 Goal:
 Give Werner natural German speech that reads only the information needed to make the current choice, with a one-tap control for changing how many choices are shown.
 
 Acceptance criteria:
-- [ ] Diagnose the live robotic-audio report at the actual playback boundary and identify whether the heard sound came from a reviewed private MP3, generated private MP3, or device-voice fallback before changing the pipeline.
-- [ ] Communication, guided-search and practice playback uses a natural German voice under the existing reviewed-MP3, generated-cache, device-fallback order.
-- [ ] Automatic page reading speaks the main prompt followed by the labels of the choices currently visible, in visual order.
-- [ ] For the example screen, the spoken content is equivalent to: `Worum geht es? Mein Tag. Familie und Menschen. Wie ich mich fühle. Gesundheit und Termine.`
-- [ ] Automatic page reading does not speak helper instructions, navigation, page counters, status text, or control labels such as Back, Repeat, Audio, and selection instructions.
-- [ ] Werner changes the visible choice count with one simple control that advances through `2 → 4 → 6 → 8 → 10 → 12`, stopping at the companion-set maximum.
-- [ ] If the companion maximum is below 12, values above that maximum are unavailable.
-- [ ] The choice-count control remains large, understandable and usable on phone, tablet and desktop.
-- [ ] Focused tests cover concise auto-read content, audio-source selection and the allowed count sequence; the behavior is then checked on the live Site.
+- [x] Diagnose the live robotic-audio report: the custom hostname was absent from the private-audio CORS allowlist, so its MP3 request could not complete in the browser and the app entered device-voice fallback.
+- [x] Communication, guided-search and practice playback uses a natural German voice under the existing reviewed-MP3, generated-cache, device-fallback order.
+- [x] Automatic page reading speaks the main prompt followed by the labels of the choices currently visible, in visual order.
+- [x] For the example screen, the spoken content is equivalent to: `Worum geht es? Mein Tag. Familie und Menschen. Wie ich mich fühle. Gesundheit und Termine.`
+- [x] Automatic page reading does not speak helper instructions, navigation, page counters, status text, or control labels such as Back, Repeat, Audio, and selection instructions.
+- [x] Werner changes the visible choice count with one simple control that advances through `2 → 4 → 6 → 8 → 10 → 12`, then returns to 2 after the companion-set maximum.
+- [x] If the companion maximum is below 12, values above that maximum are unavailable.
+- [x] The choice-count control remains large and understandable in source and focused interface checks; authenticated live phone, tablet and desktop checks remain.
+- [x] Focused tests cover concise auto-read content, audio-source selection and the allowed count sequence; live behavior remains on the acceptance checklist.
 
 Affected areas:
 - Frontend: Werner auto-read content, audio feedback and choice-count control.
@@ -185,13 +185,31 @@ Affected areas:
 - Deployment: A new verified Site version will be required after implementation.
 
 Verification required:
-- [ ] Reproduce and identify the source of the robotic live audio.
-- [ ] Focused automated checks.
-- [ ] Production build and related regression checks.
+- [x] Reproduce and identify the custom-origin boundary that forced device speech instead of private MP3 playback.
+- [x] Focused automated checks.
+- [x] Production build and related regression checks.
 - [ ] Live Werner check with real playback and each permitted choice count.
 
-Open decision:
-- [ ] Decide whether one more click at the companion maximum loops back to 2 or stays at the maximum.
+Decision:
+- One more tap at the companion maximum returns to 2 so every allowed value remains reachable with the same simple action.
+
+### DESIGN-001 — Round Wortnah logo
+
+Status: Implemented and locally verified; production Site deployment remains.
+
+Goal:
+Use the supplied Wortnah mountain-and-hiker identity as a round, recognizable app mark across the visible interface and install metadata.
+
+Acceptance criteria:
+- [x] The supplied orange, navy, mountain and hiker identity remains recognizable and the exact name `WORTNAH` appears once inside the badge.
+- [x] The visible app wordmark uses a true circular image without stretching at header and welcome-page sizes.
+- [x] The browser/app install metadata uses the new round mark.
+- [x] The mark is clear in the verified desktop render and has an accessible text name beside it; live phone and tablet checks remain.
+
+Reference direction:
+- Preserve the supplied artwork as the visual reference lock.
+- Keep the circle as the only strong new accent within the existing calm blue interface.
+- Omit the small tagline inside the badge because it becomes unreadable at app-header size; retain the app's existing visible tagline separately.
 
 ### DOMAIN-001 — Connect the GoDaddy hostname
 
@@ -205,6 +223,8 @@ Acceptance criteria:
 - [x] The required CNAME and TXT validation records are saved and public in GoDaddy DNS.
 - [x] Sites reports the custom domain and SSL certificate as active.
 - [x] `https://www.wort-nah.com` returns HTTP 200 and visibly loads the current public Wortnah landing page.
+- [x] The custom origin is accepted by the login and private-audio Edge Functions.
+- [ ] Werner's two-step login and private-audio path work from `https://www.wort-nah.com` without changing any login value.
 
 Notes / decisions:
 - DNS verification values are supplied directly from Sites to GoDaddy and are not stored in repository documentation.
@@ -217,8 +237,9 @@ Add the next agreed feature here using the task format from `docs/WORKFLOW.md` b
 ## 7. Known issues / uncertainties
 
 - The deployed 0.5.1 source is verified, but authenticated live acceptance remains incomplete until a user enters the two login values privately in the browser.
-- The user reports that current live playback still sounds robotic; the actual audio source heard has not yet been diagnosed.
+- The custom hostname previously forced device-voice fallback because private-audio browser requests were blocked at CORS. The deployed function origin repair is verified; authenticated MP3 playback and real-device fallback quality remain on the 0.5.2 live checklist.
 - Current automatic page reading is reported to include secondary instructions and controls instead of only the main prompt and visible choice labels.
+- Login and private audio are blocked from the new custom hostname because the deployed Edge Function origin allowlists contain only the earlier Site hostnames.
 - GitHub `main` contains the verified 0.5.1 implementation. The live Site uses the same runtime files under the separately recorded Site source commit.
 - `package.json` currently reports the starter package version `0.1.0`; app release tracking is handled by Wortnah release documentation. Do not infer the product release from `package.json` alone.
 

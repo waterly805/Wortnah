@@ -23,6 +23,16 @@ export function availablePatientChoiceCounts(adminMaximum: unknown): PatientChoi
   return PATIENT_CHOICE_COUNTS.filter((count) => count <= maximum);
 }
 
+export function nextPatientChoiceCount(
+  current: unknown,
+  adminMaximum: unknown = DEFAULT_ADMIN_CHOICE_MAXIMUM,
+): PatientChoiceCount {
+  const available = availablePatientChoiceCounts(adminMaximum);
+  const normalized = normalizePatientChoiceCount(current, adminMaximum);
+  const index = available.indexOf(normalized);
+  return available[(index + 1) % available.length] ?? PATIENT_CHOICE_COUNTS[0];
+}
+
 export function normalizePatientChoiceCount(
   value: unknown,
   adminMaximum: unknown = DEFAULT_ADMIN_CHOICE_MAXIMUM,
