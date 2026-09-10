@@ -3,10 +3,10 @@
 > **Purpose:** This is the single live operational source of truth for what is currently implemented, verified, in progress, and safe to release. Read this file before substantial Wortnah work and update it before considering that work complete.
 
 Last repository review: 10 September 2026
-Current app release: **0.5.0**
-Current main revision at review: `07d20caaac8ac2e6d65a9631b6f0c7fe7b2ad2a5`
-Production baseline last independently recorded: **8 September 2026**
-Exact live deployment of the current `main` revision: **must be verified before claiming a release is live**
+Current app release: **0.5.1**
+GitHub baseline before 0.5.1 synchronization: `c847939df324af498945e8ed8fe7bd52e5a0ea2a`
+Production state recorded: **10 September 2026**
+Exact live deployment: **Sites version 3 succeeded from verified Site source commit `6d5929d80b28497ed6afdd8beca2f35bc7e67b21` and is public**
 
 ## 1. Sources of truth
 
@@ -57,52 +57,58 @@ Playback order:
 
 Never place PINs, access codes, Supabase secrets, ElevenLabs keys, session tokens or temporary Site credentials in source, documentation, logs or chat output.
 
-## 3. Current implemented release: 0.5.0
+## 3. Current implemented release: 0.5.1
 
-According to the 0.5.0 release record:
+According to the 0.5.1 release record:
 
 ### Werner
 
-- Home, field count, audio state and DE/EN controls are available in the top bar.
+- Home, field count and audio state are available in the top bar; unfinished English controls are hidden.
 - Communication, guided Internet search and practice honor 2/4/6/8/10/12 card counts within the companion maximum.
 - Card paging includes arrows and page status; Back, Repeat and Audio remain reachable.
 - Internet search supports up to four guided levels and opens one exact final query.
 - Recent searches can be heard again or reopened from device-local history.
+- Guided-search previews and repeats use the private audio pipeline before device speech.
 
 ### Admin
 
 - Communication and Internet-search content have separate editors.
 - Editors show current level/path and a Werner-visible preview.
-- Internet-search content supports levels 1–4, parent sections, German/English labels, final queries, visibility, order, editing and deletion.
+- Internet-search content supports levels 1–4, parent sections, German labels, final queries, visibility, order, editing and deletion.
+- Communication and search mutations require exactly one returned row and show clear saving, success and failure states.
 
 ### Login
 
 - Access code and daily PIN are separate steps.
 - Continue/Sign in actions and Return/Enter are supported.
 - Cancel, clear, backspace, loading and retry states are present.
+- Every submitted access code or daily PIN clears immediately so the next step or retry starts empty.
 
 ### Audio
 
 - Reviewed MP3 playback uses an authenticated unlocked audio player suitable for mobile browsers.
-- 36 reviewed Internet-search phrases are mapped to guided search.
+- Guided-search phrases use the same private reviewed/generated MP3 path as communication phrases.
 - Server-side ElevenLabs cache and device-voice fallback remain in place.
+- Device fallback ranks natural German voices ahead of compact or robotic voices.
 
 ## 4. Verification state
 
-Recorded for 0.5.0:
+Recorded for 0.5.1:
 
-- 20 focused behavior checks pass.
-- App module parses successfully.
-- Production audio contains 36/36 reviewed Internet-search assets.
+- Production build and lint pass.
+- All 30 automated checks pass.
+- Supabase remains released with an active maximum of 12 and 180 reviewed private MP3 objects; no backend change was required.
+- Site version 3 deployed successfully and returns HTTP 200.
+- Site audience is public, separately from Wortnah profile authentication.
+- The anonymous live landing page shows Werner, Admin 1 and Admin 2.
 
-Still required before saying the **current main revision is live and fully accepted**:
+Still required before saying **0.5.1 is fully live-accepted**:
 
-- [ ] Confirm the deployed Site revision corresponds to the intended `main` commit.
-- [ ] Run/confirm the current production build.
-- [ ] Complete `docs/LIVE-ACCEPTANCE-CHECKLIST-0.5.0.md` against the live Site.
-- [ ] Confirm current Site audience/access gate separately from app profile login.
-- [ ] Compare live Supabase migrations/function versions if backend work changed.
-- [ ] Record the final deployment result in this file and the matching release notes/log.
+- [ ] Complete authenticated Werner checks for both PIN steps, all allowed field counts, guided search and reviewed MP3 playback.
+- [ ] Confirm intentional server-unavailable behavior selects the best installed German device voice on a real target device.
+- [ ] Complete disposable Admin 1 communication and Admin 2 guided-search CRUD checks, then remove the test rows.
+- [ ] Complete phone, tablet and desktop layout checks.
+- [ ] Update the live checklist and implementation log with the final results.
 
 ## 5. Current infrastructure
 
@@ -122,7 +128,34 @@ The repository is the canonical development record. A local clone is a working c
 
 ### In progress
 
-No new feature should be considered in progress merely because it was discussed in chat. Add it here only when its requirements are frozen and implementation has started.
+### RELEASE-0.5.1 — Authenticated live acceptance
+
+Status: In progress
+
+Goal:
+Verify the deployed 0.5.1 behavior end to end without recording credentials or leaving disposable data.
+
+Acceptance criteria:
+- [x] Exact verified source is deployed successfully and the Site is public.
+- [x] Anonymous landing page loads and exposes the three intended profiles.
+- [ ] Werner login, retry, field counts, guided search, reviewed MP3 and device fallback are checked live.
+- [ ] Admin communication and guided-search add/edit/visibility/find/delete flows are checked live with disposable rows removed.
+- [ ] Supported phone, tablet and desktop layouts are checked.
+
+Affected areas:
+- Frontend: Patient, login and companion flows.
+- Backend/Supabase: Read-only parity checks and disposable CRUD acceptance rows only.
+- Database/migrations: No change planned.
+- Audio: Reviewed private MP3 and device fallback verification.
+- Deployment: Sites version 3 is live and public.
+
+Verification required:
+- [x] Focused automated checks.
+- [x] Production build and lint.
+- [ ] Remaining authenticated live checks.
+
+Notes / decisions:
+- Access codes, daily PINs, tokens and temporary credentials must never be written to GitHub, OneDrive, logs or chat.
 
 ### Next approved work
 
@@ -130,7 +163,8 @@ Add the next agreed feature here using the task format from `docs/WORKFLOW.md` b
 
 ## 7. Known issues / uncertainties
 
-- The last independently recorded production baseline predates the 0.5.0 repository commit. Live deployment parity must therefore be verified before making a current-production claim.
+- The deployed 0.5.1 source is verified, but authenticated live acceptance remains incomplete until a user enters the two login values privately in the browser.
+- GitHub `main` is being reconciled with the already verified and deployed 0.5.1 source; the Git history is authoritative once this synchronization commit is pushed.
 - `package.json` currently reports the starter package version `0.1.0`; app release tracking is handled by Wortnah release documentation. Do not infer the product release from `package.json` alone.
 
 ## 8. Definition of done

@@ -33,4 +33,6 @@ test("patient search confirms each level and keeps full query text out of activi
   assert.match(flow, /setSearchPath/);
   assert.match(flow, /window\.open/);
   assert.doesNotMatch(flow, /metadata[^\n]*query/);
+  assert.doesNotMatch(flow, /speakWithDevice/);
+  assert.match(flow, /speak\(preview/);
 });

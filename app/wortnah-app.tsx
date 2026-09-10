@@ -20,7 +20,6 @@ import {
   Eye,
   EyeOff,
   GripVertical,
-  Languages,
   Layers3,
   LockKeyhole,
   LogOut,
@@ -53,6 +52,7 @@ import {
 } from "@/lib/choice-policy";
 import type { PatientChoiceCount } from "@/lib/choice-policy";
 import { requestPrivateVoiceAudio } from "@/lib/audio-playback";
+import { selectNaturalDeviceVoice } from "@/lib/device-voice";
 import { childrenOf, fallbackInternetSearchNodes } from "@/lib/internet-search";
 import type { InternetSearchNode } from "@/lib/internet-search";
 import { supabase, supabasePublishableKey, supabaseUrl } from "@/lib/supabase";
@@ -350,11 +350,11 @@ function Logo() {
   return <span className="wordmark"><span className="wordmark-mark" aria-hidden="true">W</span><span>Wortnah</span></span>;
 }
 
-function PinPad({ title, hint, stepLabel, submitLabel, cancelLabel, error, busy = false, busyLabel, onComplete, onBack }: { title: string; hint: string; stepLabel?: string; submitLabel: string; cancelLabel: string; error?: string; busy?: boolean; busyLabel: string; onComplete: (pin: string) => void; onBack: () => void }) {
+function PinPad({ title, hint, stepLabel, submitLabel, cancelLabel, error, busy = false, busyLabel, onComplete, onBack, onInput }: { title: string; hint: string; stepLabel?: string; submitLabel: string; cancelLabel: string; error?: string; busy?: boolean; busyLabel: string; onComplete: (pin: string) => void; onBack: () => void; onInput?: () => void }) {
   const [pin, setPin] = useState("");
-  useEffect(() => { if (error) setPin(""); }, [error]);
   const updatePin = (next: string) => {
     if (busy) return;
+    if (next !== pin) onInput?.();
     setPin(next.replace(/\D/g, "").slice(0, 4));
   };
   const add = (digit: string) => {
@@ -363,11 +363,11 @@ function PinPad({ title, hint, stepLabel, submitLabel, cancelLabel, error, busy 
   };
   return (
     <div className="centered-panel" aria-busy={busy}>
-      <form className="pin-card" onSubmit={(event) => { event.preventDefault(); if (pin.length === 4 && !busy) onComplete(pin); }}>
+      <form className="pin-card" onSubmit={(event) => { event.preventDefault(); if (pin.length === 4 && !busy) { const submittedPin = pin; setPin(""); onComplete(submittedPin); } }}>
         <div className="pin-icon"><LockKeyhole /></div>
         {stepLabel && <span className="pin-step">{stepLabel}</span>}
         <h1>{title}</h1><p>{hint}</p>
-        <InputOTP maxLength={4} value={pin} onChange={updatePin} disabled={busy} inputMode="numeric" aria-label={title}>
+        <InputOTP maxLength={4} value={pin} onChange={updatePin} disabled={busy} inputMode="numeric" aria-label={title} autoFocus>
           <InputOTPGroup className="otp-group">
             {[0, 1, 2, 3].map((index) => <InputOTPSlot key={index} index={index} className="otp-slot" />)}
           </InputOTPGroup>
@@ -392,7 +392,6 @@ function ChoiceGrid({ choices, lang, selected, speaking, onChoose, count = 4 }: 
   const safePage = Math.min(page, pageCount - 1);
   const start = safePage * count;
   const visibleChoices = choices.slice(start, start + count);
-  useEffect(() => setPage(0), [choices, count]);
   return (
     <div className="choice-carousel">
       <div className={`choice-grid choice-count-${Math.min(count, visibleChoices.length)}`}>
@@ -418,8 +417,18 @@ function ChoiceGrid({ choices, lang, selected, speaking, onChoose, count = 4 }: 
   );
 }
 
+function PatientBottomBar({ audioMode, audioModeLabel, onBack, onRepeat, onToggleAudio }: { audioMode: "off" | "slow" | "on"; audioModeLabel: string; onBack: () => void; onRepeat: () => void; onToggleAudio: () => void }) {
+  return (
+    <nav className="bottom-nav patient-bottom-nav" aria-label="Schnellnavigation">
+      <button onClick={onBack} aria-label="Zurück"><ArrowLeft /><span>Zurück</span></button>
+      <button onClick={onRepeat} aria-label="Noch einmal"><RotateCcw /><span>Noch einmal</span></button>
+      <button onClick={onToggleAudio} aria-label={audioModeLabel}>{audioMode === "off" ? <VolumeX /> : <Volume2 />}<span>{audioModeLabel}</span></button>
+    </nav>
+  );
+}
+
 export function WortnahApp() {
-  const [lang, setLang] = useState<Lang>("de");
+  const lang: Lang = "de";
   const t = copy[lang];
   const [view, setView] = useState<View>("welcome");
   const [role, setRole] = useState<Role | null>(null);
@@ -474,6 +483,9 @@ export function WortnahApp() {
   const [adminChoices, setAdminChoices] = useState<CustomChoice[]>([]);
   const [adminTopicOptions, setAdminTopicOptions] = useState<CustomChoice[]>([]);
   const [contentLoading, setContentLoading] = useState(false);
+  const [editorBusy, setEditorBusy] = useState(false);
+  const [editorNotice, setEditorNotice] = useState("");
+  const [settingsBusy, setSettingsBusy] = useState(false);
   const [editingChoice, setEditingChoice] = useState<CustomChoice | null>(null);
   const [creatingChoice, setCreatingChoice] = useState(false);
   const [choiceDraft, setChoiceDraft] = useState({ label_de: "", label_en: "", purpose_key: "request", topic_key: "", priority: "medium" as CustomChoice["priority"], practice_eligible: false, is_published: true, sort_order: 1000 });
@@ -782,14 +794,7 @@ export function WortnahApp() {
     utterance.rate = speechRate;
     utterance.pitch = 1;
     utterance.volume = 1;
-    const locale = utterance.lang.toLowerCase();
-    const exactVoices = availableVoices.filter((voice) => voice.lang.replace("_", "-").toLowerCase() === locale);
-    const femaleNames = /(anna|katja|helena|marlene|petra|vicki|victoria|amelie|seraphina|sophie|female)/i;
-    const maleNames = /(markus|martin|conrad|hans|stefan|thomas|daniel|male)/i;
-    const preferredPattern = voicePreference === "female" ? femaleNames : voicePreference === "male" ? maleNames : null;
-    const selectedVoice = (preferredPattern && exactVoices.find((voice) => preferredPattern.test(voice.name)))
-      || exactVoices.find((voice) => voice.default)
-      || exactVoices[0];
+    const selectedVoice = selectNaturalDeviceVoice(availableVoices, utterance.lang, voicePreference);
     if (selectedVoice) utterance.voice = selectedVoice;
     utterance.onstart = () => setSpeaking(id ?? "message");
     utterance.onend = () => setSpeaking(null);
@@ -1088,8 +1093,7 @@ export function WortnahApp() {
       setSelectedSearch(choice.id);
       void logInteraction("choice_preview", "internet_search", { choice_id: choice.id, level: node.search_level });
       const preview = lang === "de" ? node.query_de || node.label_de : node.query_en || node.label_en || node.label_de;
-      if (node.query_de) speak(preview, `search-${choice.id}`);
-      else speakWithDevice(preview, `search-${choice.id}`);
+      speak(preview, `search-${choice.id}`);
       return;
     }
     setSelectedSearch(null);
@@ -1199,15 +1203,29 @@ export function WortnahApp() {
   };
 
   const saveAdminChoiceMaximum = async (count: PatientChoiceCount) => {
-    if (!member || role !== "companion") return;
-    const { error: updateError } = await supabase.from("space_settings").update({ visible_topic_count: count, updated_by: member.profile_id }).eq("space_id", member.space_id);
-    if (updateError) { setError(t.saveError); return; }
-    setAdminChoiceMaximum(count);
-    setChoiceCount((current) => normalizePatientChoiceCount(current, count));
+    if (!member || role !== "companion" || settingsBusy) return;
+    setSettingsBusy(true);
+    setError("");
+    try {
+      const { data, error: updateError } = await supabase
+        .from("space_settings")
+        .update({ visible_topic_count: count, updated_by: member.profile_id })
+        .eq("space_id", member.space_id)
+        .select("visible_topic_count")
+        .single();
+      if (updateError || !data) { setError(t.saveError); return; }
+      const savedMaximum = normalizePatientChoiceCount(data.visible_topic_count, DEFAULT_ADMIN_CHOICE_MAXIMUM);
+      setAdminChoiceMaximum(savedMaximum);
+      setChoiceCount((current) => normalizePatientChoiceCount(current, savedMaximum));
+      setEditorNotice(`Maximal ${savedMaximum} Felder sind jetzt freigegeben.`);
+    } finally {
+      setSettingsBusy(false);
+    }
   };
 
   const startChoiceEditor = (item?: CustomChoice) => {
     setError("");
+    setEditorNotice("");
     setEditingChoice(item ?? null);
     setCreatingChoice(!item);
     setChoiceDraft(item ? {
@@ -1225,10 +1243,9 @@ export function WortnahApp() {
   const closeChoiceEditor = () => { setEditingChoice(null); setCreatingChoice(false); setError(""); };
 
   const saveChoice = async () => {
-    if (!member || !choiceDraft.label_de.trim()) { setError(lang === "de" ? "Bitte deutschen Text eingeben." : "Enter German text."); return; }
+    if (!member || editorBusy || !choiceDraft.label_de.trim()) { if (!choiceDraft.label_de.trim()) setError("Bitte deutschen Text eingeben."); return; }
     const payload = {
       label_de: choiceDraft.label_de.trim(),
-      label_en: choiceDraft.label_en.trim(),
       choice_level: contentLevel,
       purpose_key: contentLevel === "purpose" ? null : choiceDraft.purpose_key || null,
       topic_key: contentLevel === "detail" ? choiceDraft.topic_key || null : null,
@@ -1237,24 +1254,34 @@ export function WortnahApp() {
       is_published: choiceDraft.is_published,
       sort_order: Number(choiceDraft.sort_order) || 1000,
     };
-    if (contentLevel === "detail" && !payload.topic_key) { setError(lang === "de" ? "Bitte einen Themen-Schlüssel eingeben." : "Enter a topic key."); return; }
-    const result = editingChoice
-      ? await supabase.from("communication_custom_choices").update(payload).eq("id", editingChoice.id)
-      : await supabase.from("communication_custom_choices").insert({
-          ...payload,
-          space_id: member.space_id,
-          created_by: member.profile_id,
-          option_key: `admin_${contentLevel}_${crypto.randomUUID().replaceAll("-", "")}`,
-          source_name: "Wortnah Admin",
-        });
-    if (result.error) { setError(result.error.message); return; }
-    closeChoiceEditor();
-    await loadAdminChoices();
+    if (contentLevel === "detail" && !payload.topic_key) { setError("Bitte ein Thema wählen."); return; }
+    setEditorBusy(true);
+    setError("");
+    try {
+      const result = editingChoice
+        ? await supabase.from("communication_custom_choices").update(payload).eq("id", editingChoice.id).eq("space_id", member.space_id).select("id").single()
+        : await supabase.from("communication_custom_choices").insert({
+            ...payload,
+            label_en: "",
+            space_id: member.space_id,
+            created_by: member.profile_id,
+            option_key: `admin_${contentLevel}_${crypto.randomUUID().replaceAll("-", "")}`,
+            source_name: "Wortnah Admin",
+          }).select("id").single();
+      if (result.error || !result.data) { setError(t.saveError); return; }
+      const savedLabel = choiceDraft.label_de.trim();
+      closeChoiceEditor();
+      setEditorNotice(`„${savedLabel}“ wurde gespeichert.`);
+      await loadAdminChoices();
+    } finally {
+      setEditorBusy(false);
+    }
   };
 
   const toggleChoicePublished = async (item: CustomChoice) => {
-    const { error: updateError } = await supabase.from("communication_custom_choices").update({ is_published: !item.is_published }).eq("id", item.id);
-    if (updateError) { setError(t.saveError); return; }
+    if (!member) return;
+    const { data, error: updateError } = await supabase.from("communication_custom_choices").update({ is_published: !item.is_published }).eq("id", item.id).eq("space_id", member.space_id).select("id").single();
+    if (updateError || !data) { setError(t.saveError); return; }
     setAdminChoices((items) => items.map((entry) => entry.id === item.id ? { ...entry, is_published: !entry.is_published } : entry));
   };
 
@@ -1274,15 +1301,18 @@ export function WortnahApp() {
   };
 
   const deleteChoice = async (item: CustomChoice) => {
-    const confirmed = window.confirm(lang === "de" ? `„${item.label_de}“ dauerhaft löschen?` : `Permanently delete “${item.label_de}”?`);
+    if (!member) return;
+    const confirmed = window.confirm(`„${item.label_de}“ dauerhaft löschen?`);
     if (!confirmed) return;
-    const { error: deleteError } = await supabase.from("communication_custom_choices").delete().eq("id", item.id);
-    if (deleteError) { setError(t.saveError); return; }
+    const { data, error: deleteError } = await supabase.from("communication_custom_choices").delete().eq("id", item.id).eq("space_id", member.space_id).select("id").single();
+    if (deleteError || !data) { setError(t.saveError); return; }
     setAdminChoices((items) => items.filter((entry) => entry.id !== item.id));
+    setEditorNotice(`„${item.label_de}“ wurde gelöscht.`);
   };
 
   const startSearchEditor = (item?: InternetSearchNode) => {
     setError("");
+    setEditorNotice("");
     setEditingSearchNode(item ?? null);
     setCreatingSearchNode(!item);
     setSearchDraft(item ? {
@@ -1299,48 +1329,60 @@ export function WortnahApp() {
   const closeSearchEditor = () => { setEditingSearchNode(null); setCreatingSearchNode(false); setError(""); };
 
   const saveSearchNode = async () => {
-    if (!member || !searchDraft.label_de.trim()) { setError(lang === "de" ? "Bitte deutschen Text eingeben." : "Enter German text."); return; }
-    if (adminSearchLevel > 1 && !searchDraft.parent_key) { setError(lang === "de" ? "Bitte den übergeordneten Bereich wählen." : "Choose the parent section."); return; }
+    if (!member || editorBusy || !searchDraft.label_de.trim()) { if (!searchDraft.label_de.trim()) setError("Bitte deutschen Text eingeben."); return; }
+    if (adminSearchLevel > 1 && !searchDraft.parent_key) { setError("Bitte den übergeordneten Bereich wählen."); return; }
     const payload = {
       parent_key: adminSearchLevel === 1 ? null : searchDraft.parent_key,
       search_level: adminSearchLevel,
       label_de: searchDraft.label_de.trim(),
-      label_en: searchDraft.label_en.trim(),
       query_de: searchDraft.query_de.trim() || null,
-      query_en: searchDraft.query_en.trim() || null,
       is_published: searchDraft.is_published,
       sort_order: Number(searchDraft.sort_order) || 1000,
     };
-    const result = editingSearchNode
-      ? await supabase.from("internet_search_choices").update(payload).eq("id", editingSearchNode.id)
-      : await supabase.from("internet_search_choices").insert({
-          ...payload,
-          space_id: member.space_id,
-          created_by: member.profile_id,
-          option_key: `admin-${crypto.randomUUID()}`,
-        });
-    if (result.error) { setError(result.error.message); return; }
-    closeSearchEditor();
-    await loadAdminSearchNodes();
+    setEditorBusy(true);
+    setError("");
+    try {
+      const result = editingSearchNode
+        ? await supabase.from("internet_search_choices").update(payload).eq("id", editingSearchNode.id).eq("space_id", member.space_id).select("id").single()
+        : await supabase.from("internet_search_choices").insert({
+            ...payload,
+            label_en: "",
+            query_en: null,
+            space_id: member.space_id,
+            created_by: member.profile_id,
+            option_key: `admin-${crypto.randomUUID()}`,
+          }).select("id").single();
+      if (result.error || !result.data) { setError(t.saveError); return; }
+      const savedLabel = searchDraft.label_de.trim();
+      closeSearchEditor();
+      setEditorNotice(`„${savedLabel}“ wurde gespeichert.`);
+      await loadAdminSearchNodes();
+    } finally {
+      setEditorBusy(false);
+    }
   };
 
   const toggleSearchPublished = async (item: InternetSearchNode) => {
-    const { error: updateError } = await supabase.from("internet_search_choices").update({ is_published: !item.is_published }).eq("id", item.id);
-    if (updateError) { setError(t.saveError); return; }
+    if (!member) return;
+    const { data, error: updateError } = await supabase.from("internet_search_choices").update({ is_published: !item.is_published }).eq("id", item.id).eq("space_id", member.space_id).select("id").single();
+    if (updateError || !data) { setError(t.saveError); return; }
     setAdminSearchNodes((items) => items.map((entry) => entry.id === item.id ? { ...entry, is_published: !entry.is_published } : entry));
     setSearchNodes((items) => items.map((entry) => entry.id === item.id ? { ...entry, is_published: !entry.is_published } : entry));
   };
 
   const deleteSearchNode = async (item: InternetSearchNode) => {
-    const confirmed = window.confirm(lang === "de" ? `„${item.label_de}“ und untergeordnete Einträge dauerhaft löschen?` : `Permanently delete “${item.label_de}” and its children?`);
+    if (!member) return;
+    const confirmed = window.confirm(`„${item.label_de}“ und untergeordnete Einträge dauerhaft löschen?`);
     if (!confirmed) return;
-    const { error: deleteError } = await supabase.from("internet_search_choices").delete().eq("id", item.id);
-    if (deleteError) { setError(t.saveError); return; }
+    const { data, error: deleteError } = await supabase.from("internet_search_choices").delete().eq("id", item.id).eq("space_id", member.space_id).select("id").single();
+    if (deleteError || !data) { setError(t.saveError); return; }
+    setEditorNotice(`„${item.label_de}“ wurde gelöscht.`);
     await loadAdminSearchNodes();
   };
 
   const startPracticeEditor = (item?: PracticeItem) => {
     setError("");
+    setEditorNotice("");
     setEditingPractice(item ?? null);
     setCreatingPractice(!item);
     setPracticeDraft(item ? { label_de: item.label_de, label_en: item.label_en, difficulty: item.difficulty, sort_order: item.sort_order } : { label_de: "", label_en: "", difficulty: "easy", sort_order: 1000 });
@@ -1349,14 +1391,22 @@ export function WortnahApp() {
   const closePracticeEditor = () => { setEditingPractice(null); setCreatingPractice(false); setError(""); };
 
   const savePracticeItem = async () => {
-    if (!member || !practiceDraft.label_de.trim()) { setError(lang === "de" ? "Bitte einen Übungstext eingeben." : "Enter practice text."); return; }
-    const payload = { label_de: practiceDraft.label_de.trim(), label_en: practiceDraft.label_en.trim(), difficulty: practiceDraft.difficulty, sort_order: Number(practiceDraft.sort_order) || 1000 };
-    const result = editingPractice
-      ? await supabase.from("communication_practice_items").update(payload).eq("id", editingPractice.id)
-      : await supabase.from("communication_practice_items").insert({ ...payload, space_id: member.space_id, created_by: member.profile_id, source_key: `admin_practice_${crypto.randomUUID().replaceAll("-", "")}`, source_name: "Wortnah Admin" });
-    if (result.error) { setError(result.error.message); return; }
-    closePracticeEditor();
-    await loadPracticeItems();
+    if (!member || editorBusy || !practiceDraft.label_de.trim()) { if (!practiceDraft.label_de.trim()) setError("Bitte einen Übungstext eingeben."); return; }
+    const payload = { label_de: practiceDraft.label_de.trim(), difficulty: practiceDraft.difficulty, sort_order: Number(practiceDraft.sort_order) || 1000 };
+    setEditorBusy(true);
+    setError("");
+    try {
+      const result = editingPractice
+        ? await supabase.from("communication_practice_items").update(payload).eq("id", editingPractice.id).eq("space_id", member.space_id).select("id").single()
+        : await supabase.from("communication_practice_items").insert({ ...payload, label_en: "", space_id: member.space_id, created_by: member.profile_id, source_key: `admin_practice_${crypto.randomUUID().replaceAll("-", "")}`, source_name: "Wortnah Admin" }).select("id").single();
+      if (result.error || !result.data) { setError(t.saveError); return; }
+      const savedLabel = practiceDraft.label_de.trim();
+      closePracticeEditor();
+      setEditorNotice(`„${savedLabel}“ wurde gespeichert.`);
+      await loadPracticeItems();
+    } finally {
+      setEditorBusy(false);
+    }
   };
 
   const deletePracticeItem = async (item: PracticeItem) => {
@@ -1411,23 +1461,15 @@ export function WortnahApp() {
           <label className="header-button field-count-control" title={lang === "de" ? "Anzahl Felder" : "Number of fields"}>
             <Layers3 aria-hidden="true" />
             <span className="sr-only">{lang === "de" ? "Anzahl Felder" : "Number of fields"}</span>
+            <span className="field-count-label">Felder</span>
             <select value={choiceCount} onChange={(event) => choosePatientFieldCount(Number(event.target.value) as PatientChoiceCount)} aria-label={lang === "de" ? "Anzahl Felder" : "Number of fields"}>
               {allowedChoiceCounts.map((count) => <option key={count} value={count}>{count}</option>)}
             </select>
           </label>
         </>}
         <button className={`header-button round-control audio-${audioMode}`} onClick={cycleAudioMode} aria-label={audioModeLabel} title={audioModeLabel}>{audioMode === "off" ? <VolumeX /> : <Volume2 />}<span>{audioModeLabel}</span></button>
-        <button className="header-button round-control language-control" onClick={() => setLang((value) => value === "de" ? "en" : "de")} aria-label={lang === "de" ? "Switch to English" : "Zu Deutsch wechseln"} title={lang === "de" ? "English" : "Deutsch"}><Languages /><span>{lang === "de" ? "DE" : "EN"}</span></button>
       </div>
     </header>
-  );
-
-  const patientBottomBar = (onBack: () => void, onRepeat: () => void, screenKey: string) => (
-    <nav className="bottom-nav patient-bottom-nav" aria-label={lang === "de" ? "Schnellnavigation" : "Quick navigation"}>
-      <button onClick={onBack} aria-label={t.back}><ArrowLeft /><span>{t.back}</span></button>
-      <button onClick={() => { void logInteraction("choice_repeat", screenKey); onRepeat(); }} aria-label={t.repeat}><RotateCcw /><span>{t.repeat}</span></button>
-      <button onClick={() => { void logInteraction("audio_toggle", screenKey); cycleAudioMode(); }} aria-label={audioModeLabel}>{audioMode === "off" ? <VolumeX /> : <Volume2 />}<span>{audioModeLabel}</span></button>
-    </nav>
   );
 
   if (booting) return <main className="app-shell loading-screen"><Logo /><div className="loading-bar" /></main>;
@@ -1445,13 +1487,12 @@ export function WortnahApp() {
           <button className="role-card companion-role" onClick={() => { setPilotProfile("admin2"); setDesiredRole("companion"); setError(""); setView("login"); }}><span className="role-icon"><ShieldCheck /></span><span><strong>Admin 2</strong><small>{t.companionHint}</small></span><ChevronRight /></button>
         </div>
       </section>
-      <button className="language-float" onClick={() => setLang((value) => value === "de" ? "en" : "de")}><Languages /> {lang === "de" ? "English" : "Deutsch"}</button>
     </main>
   );
 
   if (view === "login") {
     const profileLabel = pilotProfile === "werner" ? "Werner" : pilotProfile === "admin1" ? "Admin 1" : "Admin 2";
-    return <main className="app-shell"><PinPad stepLabel={lang === "de" ? "Schritt 1 von 2" : "Step 1 of 2"} title={`${profileLabel} · ${lang === "de" ? "Zugangscode" : "Access code"}`} hint={lang === "de" ? "Geben Sie zuerst den vierstelligen Zugangscode für dieses Profil ein." : "First enter the four-digit access code for this profile."} submitLabel={lang === "de" ? "Zugang prüfen" : "Check access"} cancelLabel={lang === "de" ? "Abbrechen" : "Cancel"} error={error} busy={authBusy} busyLabel={lang === "de" ? "Zugang wird geprüft …" : "Checking access …"} onComplete={handlePilotLogin} onBack={() => { setPilotProfile(null); setError(""); setView("welcome"); }} /></main>;
+    return <main className="app-shell"><PinPad key={`access-${pilotProfile}`} stepLabel="Schritt 1 von 2" title={`${profileLabel} · Zugangscode`} hint="Geben Sie zuerst den vierstelligen Zugangscode für dieses Profil ein." submitLabel="Zugang prüfen" cancelLabel="Abbrechen" error={error} busy={authBusy} busyLabel="Zugang wird geprüft …" onComplete={handlePilotLogin} onInput={() => setError("")} onBack={() => { setPilotProfile(null); setError(""); setView("welcome"); }} /></main>;
   }
 
   if (view === "onboarding") return (
@@ -1465,7 +1506,7 @@ export function WortnahApp() {
     </main>
   );
 
-  if (view === "pin") return <main className="app-shell"><PinPad stepLabel={pinMode === "unlock" ? (lang === "de" ? "Schritt 2 von 2" : "Step 2 of 2") : (lang === "de" ? "Gerät einrichten" : "Set up device")} title={pinMode === "create" ? t.setPin : (lang === "de" ? "Tägliche PIN eingeben" : "Enter daily PIN")} hint={pinMode === "unlock" ? (lang === "de" ? "Der Zugangscode stimmt. Geben Sie jetzt die vierstellige tägliche PIN ein." : "The access code is correct. Now enter the four-digit daily PIN.") : t.pinHint} submitLabel={pinMode === "create" ? (lang === "de" ? "PIN speichern" : "Save PIN") : (lang === "de" ? "Anmelden" : "Sign in")} cancelLabel={lang === "de" ? "Zurück" : "Back"} error={error} busy={authBusy} busyLabel={lang === "de" ? "PIN wird geprüft …" : "Checking PIN …"} onComplete={handlePin} onBack={pinMode === "unlock" ? signOut : () => setView("onboarding")} />{pinMode === "unlock" && !demo && <button className="forgot-pin" onClick={signOut} disabled={authBusy}>{t.forgotPin}</button>}</main>;
+  if (view === "pin") return <main className="app-shell"><PinPad key={`daily-${pinMode}-${member?.profile_id ?? "setup"}`} stepLabel={pinMode === "unlock" ? "Schritt 2 von 2" : "Gerät einrichten"} title={pinMode === "create" ? t.setPin : "Tägliche PIN eingeben"} hint={pinMode === "unlock" ? "Der Zugangscode stimmt. Geben Sie jetzt die vierstellige tägliche PIN ein." : t.pinHint} submitLabel={pinMode === "create" ? "PIN speichern" : "Anmelden"} cancelLabel="Zurück" error={error} busy={authBusy} busyLabel="PIN wird geprüft …" onComplete={handlePin} onInput={() => setError("")} onBack={pinMode === "unlock" ? signOut : () => setView("onboarding")} />{pinMode === "unlock" && !demo && <button className="forgot-pin" onClick={signOut} disabled={authBusy}>{t.forgotPin}</button>}</main>;
 
   if (view === "home") return (
     <main className="app-shell main-app" style={{ "--text-scale": textScale } as React.CSSProperties}>
@@ -1490,12 +1531,12 @@ export function WortnahApp() {
       <div className="content-wrap communication-content">
         {searchPath.length > 0 && <nav className="search-path" aria-label={lang === "de" ? "Suchpfad" : "Search path"}><button onClick={() => { setSearchPath([]); setSelectedSearch(null); }}>{t.search}</button>{searchPath.map((node, index) => <span key={node.option_key}><ChevronRight /><button onClick={() => { setSearchPath((path) => path.slice(0, index + 1)); setSelectedSearch(null); }}>{lang === "de" ? node.label_de : node.label_en || node.label_de}</button></span>)}</nav>}
         <div className="page-heading"><span className="search-level-pill">{lang === "de" ? "Ebene" : "Level"} {searchPath.length + 1}</span><h1>{searchPath.length ? (lang === "de" ? "Wählen Sie den nächsten Schritt" : "Choose the next step") : (lang === "de" ? "Was möchten Sie suchen?" : "What would you like to search?")}</h1><p>{t.firstTap}</p></div>
-        <ChoiceGrid choices={currentSearchChoices} lang={lang} selected={selectedSearch} speaking={speaking} onChoose={chooseSearch} count={choiceCount} />
+        <ChoiceGrid key={`search-${searchPath.at(-1)?.option_key ?? "root"}-${choiceCount}`} choices={currentSearchChoices} lang={lang} selected={selectedSearch} speaking={speaking} onChoose={chooseSearch} count={choiceCount} />
         <button className="missing-topic-button" onClick={() => setShowMissingChoices((value) => !value)}><Plus />{t.missingTopic}</button>
         {showMissingChoices && <section className="missing-choice-panel"><h2>{t.whatMissing}</h2><div>{[{ id: "topic", de: "Suchthema fehlt", en: "Search topic is missing" }, { id: "result", de: "Passendes Ergebnis fehlt", en: "The right result is missing" }, { id: "help", de: "Ich brauche Hilfe", en: "I need help" }].map((item) => <button key={item.id} onClick={() => reportMissing(`search_${item.id}`)}>{item[lang]}</button>)}</div></section>}
         {searchHistory.length > 0 && <section className="search-history" aria-label={lang === "de" ? "Letzte Suchen" : "Recent searches"}><h2>{lang === "de" ? "Letzte Suchen" : "Recent searches"}</h2><div>{searchHistory.slice(0, 5).map((item) => <article key={item.id}><span>{item.text}</span><button onClick={() => speak(item.text, `history-${item.id}`)} aria-label={lang === "de" ? "Anhören" : "Listen"}><Volume2 /></button><button onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(item.text)}`, "_blank", "noopener,noreferrer")}><Search />{lang === "de" ? "Suchen" : "Search"}</button></article>)}</div></section>}
       </div>
-      {patientBottomBar(searchBack, () => { const current = currentSearchNodes.find((item) => item.option_key === selectedSearch) ?? currentSearchNodes[0]; if (current) { const text = lang === "de" ? current.query_de || current.label_de : current.query_en || current.label_en || current.label_de; current.query_de ? speak(text, `search-${current.option_key}`) : speakWithDevice(text, `search-${current.option_key}`); } }, "internet_search")}
+      <PatientBottomBar audioMode={audioMode} audioModeLabel={audioModeLabel} onBack={searchBack} onRepeat={() => { void logInteraction("choice_repeat", "internet_search"); const current = currentSearchNodes.find((item) => item.option_key === selectedSearch) ?? currentSearchNodes[0]; if (current) { const text = lang === "de" ? current.query_de || current.label_de : current.query_en || current.label_en || current.label_de; speak(text, `search-${current.option_key}`); } }} onToggleAudio={() => { void logInteraction("audio_toggle", "internet_search"); cycleAudioMode(); }} />
     </main>
   );
 
@@ -1517,7 +1558,7 @@ export function WortnahApp() {
           {commStep !== "success" && <div className="progress-row"><span className={commStep === "purpose" ? "active" : "done"}>1</span><i /><span className={commStep === "topic" ? "active" : ["detail","review","practice","priority"].includes(commStep) ? "done" : ""}>2</span><i /><span className={commStep === "detail" ? "active" : ["review","practice","priority"].includes(commStep) ? "done" : ""}>3</span><i /><span className={["review","practice","priority"].includes(commStep) ? "active" : ""}>4</span></div>}
           <div className="page-heading"><h1>{title}</h1>{["purpose","topic","detail"].includes(commStep) && <p>{t.firstTap}</p>}</div>
           {patientChoicesLoading && ["topic","detail"].includes(commStep) && <div className="choice-loading" role="status"><div className="loading-bar" /><span>{lang === "de" ? "Auswahl wird vorbereitet …" : "Preparing choices …"}</span></div>}
-          {["purpose","topic","detail"].includes(commStep) && <ChoiceGrid choices={currentChoices} lang={lang} selected={selected} speaking={speaking} onChoose={chooseCommunication} count={choiceCount} />}
+          {["purpose","topic","detail"].includes(commStep) && <ChoiceGrid key={`communication-${commStep}-${purpose?.id ?? "root"}-${topic?.id ?? "root"}-${choiceCount}`} choices={currentChoices} lang={lang} selected={selected} speaking={speaking} onChoose={chooseCommunication} count={choiceCount} />}
           {commStep !== "success" && <button className="missing-topic-button" onClick={() => setShowMissingChoices((open) => !open)} aria-expanded={showMissingChoices}><CircleHelp />{t.missingTopic}</button>}
           {showMissingChoices && commStep !== "success" && <section className="missing-choice-panel" aria-label={t.whatMissing}><h2>{t.whatMissing}</h2><div>{missingChoices.map((item) => <button key={item.id} onClick={() => void reportMissing(item.id)}>{item[lang]}</button>)}</div></section>}
           {status && view === "communicate" && <p className="inline-status">{status}</p>}
@@ -1526,7 +1567,7 @@ export function WortnahApp() {
           {commStep === "priority" && detail && <section className="priority-panel"><div className="compact-message">{detail[lang]}</div><div className="priority-grid">{(["normal","important","very_important"] as Priority[]).map((item) => <button key={item} className={`priority-card ${item} ${priority === item ? "selected" : ""}`} onClick={() => setPriority(item)}><span />{item === "normal" ? t.normal : item === "important" ? t.important : t.veryImportant}{priority === item && <Check />}</button>)}</div>{error && <p className="form-error">{error}</p>}<button className="send-final" onClick={sendMessage}><Send />{t.sendNow}</button></section>}
           {commStep === "success" && <section className="success-panel"><span className="success-check"><Check /></span><h1>{t.sent}</h1><p>{t.sentHint}</p><button className="primary-button" onClick={openHome}>{t.home}</button></section>}
         </div>
-        {commStep !== "success" && patientBottomBar(communicationBack, () => { const text = commStep === "review" || commStep === "practice" || commStep === "priority" ? detail?.[lang] : selected ? currentChoices.find((item) => item.id === selected)?.[lang] : currentChoices[0]?.[lang]; if (text) speak(text); }, `communicate_${commStep}`)}
+        {commStep !== "success" && <PatientBottomBar audioMode={audioMode} audioModeLabel={audioModeLabel} onBack={communicationBack} onRepeat={() => { void logInteraction("choice_repeat", `communicate_${commStep}`); const text = commStep === "review" || commStep === "practice" || commStep === "priority" ? detail?.[lang] : selected ? currentChoices.find((item) => item.id === selected)?.[lang] : currentChoices[0]?.[lang]; if (text) speak(text); }} onToggleAudio={() => { void logInteraction("audio_toggle", `communicate_${commStep}`); cycleAudioMode(); }} />}
       </main>
     );
   }
@@ -1537,7 +1578,7 @@ export function WortnahApp() {
       : ["Please", "Thank you", "I need a break.", "Please bring me something to drink.", "I am cold.", "I am warm.", "I would like to go for a walk.", "Please speak more slowly.", "I understood that.", "I need help.", "I would like to listen to music.", "Please say that again."];
     const visiblePracticeItems = practiceItems.length ? practiceItems.slice(0, choiceCount).map((entry) => lang === "de" ? entry.label_de : entry.label_en || entry.label_de) : fallbackItems.slice(0, choiceCount);
     const item = visiblePracticeItems[practiceIndex % visiblePracticeItems.length];
-    return <main className="app-shell main-app practice-page" style={{ "--text-scale": textScale } as React.CSSProperties}>{shellHeader(t.practice, true)}<div className="content-wrap standalone-practice"><div className="practice-heading"><span className="practice-orb"><Headphones /></span><div><p className="practice-kicker">{lang === "de" ? "Schritt für Schritt" : "Step by step"}</p><h1>{t.practiceTitle}</h1><p>{t.practiceHint}</p></div></div><div className="practice-stats" aria-label={lang === "de" ? "Übungsfortschritt" : "Practice progress"}><article className="practice-stat peach"><small>{lang === "de" ? "Heute" : "Today"}</small><strong>{practiceIndex + 1}</strong><span>{lang === "de" ? "Übung ausgewählt" : "practice selected"}</span></article><article className="practice-stat mint"><small>{lang === "de" ? "Methode" : "Method"}</small><strong><Headphones /></strong><span>{lang === "de" ? "Hören" : "Listen"}</span></article><article className="practice-stat lavender"><small>{lang === "de" ? "Nächster Schritt" : "Next step"}</small><strong><Mic /></strong><span>{lang === "de" ? "Nachsprechen" : "Repeat"}</span></article></div><section className="practice-game-card"><div><p className="practice-kicker">{lang === "de" ? "Wählen Sie einen Satz" : "Choose a phrase"}</p><h2>{lang === "de" ? `${visiblePracticeItems.length} Wörter und Sätze zum Üben` : `${visiblePracticeItems.length} words and phrases to practice`}</h2></div><div className="practice-choice-grid">{visiblePracticeItems.map((practiceItem, index) => <button key={`${practiceItem}-${index}`} className={`practice-choice ${item === practiceItem ? "selected" : ""}`} aria-pressed={item === practiceItem} onClick={() => { setPracticeIndex(index); speak(practiceItem, `practice-${index}`); }}><span>{index + 1}</span><strong>{practiceItem}</strong><Volume2 /></button>)}</div></section><blockquote>{item}</blockquote><button className="listen-large" onClick={() => speak(item)}><Volume2 />{t.listen}</button><div className="practice-controls"><button onClick={() => speak(item)}><RotateCcw />{t.repeat}</button><button className="primary-button" onClick={() => { void logInteraction("practice_completed", "practice"); setPracticeIndex((value) => value + 1); }}>{t.next}<ChevronRight /></button></div><button className="text-action" onClick={openHome}>{t.done}</button></div>{patientBottomBar(openHome, () => speak(item), "practice")}</main>;
+    return <main className="app-shell main-app practice-page" style={{ "--text-scale": textScale } as React.CSSProperties}>{shellHeader(t.practice, true)}<div className="content-wrap standalone-practice"><div className="practice-heading"><span className="practice-orb"><Headphones /></span><div><p className="practice-kicker">{lang === "de" ? "Schritt für Schritt" : "Step by step"}</p><h1>{t.practiceTitle}</h1><p>{t.practiceHint}</p></div></div><div className="practice-stats" aria-label={lang === "de" ? "Übungsfortschritt" : "Practice progress"}><article className="practice-stat peach"><small>{lang === "de" ? "Heute" : "Today"}</small><strong>{practiceIndex + 1}</strong><span>{lang === "de" ? "Übung ausgewählt" : "practice selected"}</span></article><article className="practice-stat mint"><small>{lang === "de" ? "Methode" : "Method"}</small><strong><Headphones /></strong><span>{lang === "de" ? "Hören" : "Listen"}</span></article><article className="practice-stat lavender"><small>{lang === "de" ? "Nächster Schritt" : "Next step"}</small><strong><Mic /></strong><span>{lang === "de" ? "Nachsprechen" : "Repeat"}</span></article></div><section className="practice-game-card"><div><p className="practice-kicker">{lang === "de" ? "Wählen Sie einen Satz" : "Choose a phrase"}</p><h2>{lang === "de" ? `${visiblePracticeItems.length} Wörter und Sätze zum Üben` : `${visiblePracticeItems.length} words and phrases to practice`}</h2></div><div className="practice-choice-grid">{visiblePracticeItems.map((practiceItem, index) => <button key={`${practiceItem}-${index}`} className={`practice-choice ${item === practiceItem ? "selected" : ""}`} aria-pressed={item === practiceItem} onClick={() => { setPracticeIndex(index); speak(practiceItem, `practice-${index}`); }}><span>{index + 1}</span><strong>{practiceItem}</strong><Volume2 /></button>)}</div></section><blockquote>{item}</blockquote><button className="listen-large" onClick={() => speak(item)}><Volume2 />{t.listen}</button><div className="practice-controls"><button onClick={() => speak(item)}><RotateCcw />{t.repeat}</button><button className="primary-button" onClick={() => { void logInteraction("practice_completed", "practice"); setPracticeIndex((value) => value + 1); }}>{t.next}<ChevronRight /></button></div><button className="text-action" onClick={openHome}>{t.done}</button></div><PatientBottomBar audioMode={audioMode} audioModeLabel={audioModeLabel} onBack={openHome} onRepeat={() => { void logInteraction("choice_repeat", "practice"); speak(item); }} onToggleAudio={() => { void logInteraction("audio_toggle", "practice"); cycleAudioMode(); }} /></main>;
   }
 
   if (view === "messages") return (
@@ -1550,15 +1591,14 @@ export function WortnahApp() {
       : ["Food", "Drinks", "Family", "Appointments", "Feelings", "Help", "Activities", "More topics", "Weather", "Music", "Visit", "Break"];
     return (
       <main className="app-shell main-app" style={{ "--text-scale": textScale } as React.CSSProperties}>{shellHeader(t.settings, true)}<div className="content-wrap settings-content">
-        <div className="settings-section"><h2><Volume2 />{lang === "de" ? "Sprache und Ton" : "Language and sound"}</h2>
+        <div className="settings-section"><h2><Volume2 />Ton und Stimme</h2>
           <button className="setting-row" onClick={() => { setAudioEnabled((v) => !v); savePreference({ speech_enabled: !audioEnabled }); }}><span><strong>{audioEnabled ? t.audioOn : t.audioOff}</strong><small>{lang === "de" ? "Eine Auswahl wird beim Antippen klar vorgelesen" : "A choice is read clearly when tapped"}</small></span><span className={`switch ${audioEnabled ? "on" : ""}`}><i /></span></button>
           <button className="setting-row" onClick={() => { const next = !autoReadChoices; setAutoReadChoices(next); savePreference({ auto_read_choices: next }); }}><span><strong>{lang === "de" ? "Hauptauswahl automatisch vorlesen" : "Read main choices automatically"}</strong><small>{lang === "de" ? "Wortnah liest die Überschrift und sichtbaren Karten nacheinander vor." : "Wortnah reads the heading and visible cards one after another."}</small></span><span className={`switch ${autoReadChoices ? "on" : ""}`}><i /></span></button>
           <div className="setting-block"><strong>{t.voice}</strong><small>{lang === "de" ? "Wortnah verwendet nur verfügbares Standarddeutsch (de-DE)." : "Wortnah uses available Standard German voices (de-DE) only."}</small><div className="option-row">{(["auto","female","male"] as VoicePreference[]).map((voice) => <button key={voice} className={voicePreference === voice ? "active" : ""} onClick={() => { setVoicePreference(voice); savePreference({ voice_name: voice === "auto" ? null : `wortnah:${voice}`, voice_locale: "de-DE" }); }}>{voice === "auto" ? t.voiceAuto : voice === "female" ? t.voiceFemale : t.voiceMale}</button>)}</div><button className="test-voice-button" onClick={() => speak(lang === "de" ? "Guten Tag. Ich spreche klar und in Ruhe." : "Hello. I speak clearly and calmly.")}><Volume2 />{t.voiceTest}</button></div>
           <div className="setting-block"><strong>{t.speechSpeed}</strong><div className="option-row">{[[0.72,t.slow],[0.82,t.clear],[0.92,t.normalSpeed]].map(([rate,label]) => <button key={String(rate)} className={speechRate === rate ? "active" : ""} onClick={() => { setSpeechRate(rate as number); savePreference({ speech_rate: rate }); }}>{label}</button>)}</div></div>
-          <button className="setting-row" onClick={() => setLang((value) => value === "de" ? "en" : "de")}><span><strong>{lang === "de" ? "Deutsch" : "English"}</strong><small>{lang === "de" ? "Sprache der ganzen App" : "Language for the whole app"}</small></span><Languages /></button>
         </div>
         <div className="settings-section"><h2><Settings2 />{t.appearance}</h2>
-          <div className="setting-block"><strong>{t.choices}</strong><small>{lang === "de" ? `Mein Bereich kann bis zum festgelegten Maximum von ${adminChoiceMaximum} wählen.` : `My Space can choose up to the configured maximum of ${adminChoiceMaximum}.`}</small><div className="option-row">{allowedChoiceCounts.map((count) => <button key={count} className={choiceCount === count ? "active" : ""} onClick={() => { setChoiceCount(count); savePreference({ choice_count: count }); }}>{count}</button>)}</div><div className={`choice-preview preview-${choiceCount}`}>{previewLabels.slice(0, choiceCount).map((label) => <span key={label}>{label}</span>)}</div></div>
+          <div className="setting-block field-choice-setting"><strong>{t.choices}</strong><small>Wählen Sie selbst zwischen 2 und {adminChoiceMaximum} Feldern. Aktuell sind {choiceCount} Felder ausgewählt.</small><div className="option-row" aria-label="Anzahl der Felder">{allowedChoiceCounts.map((count) => <button key={count} className={choiceCount === count ? "active" : ""} aria-pressed={choiceCount === count} onClick={() => choosePatientFieldCount(count)}>{count}<span>Felder</span></button>)}</div><div className={`choice-preview preview-${choiceCount}`}>{previewLabels.slice(0, choiceCount).map((label) => <span key={label}>{label}</span>)}</div></div>
           <div className="setting-block"><strong>{t.textSize}</strong><div className="option-row">{[[1,t.standard],[1.12,t.large],[1.24,t.larger]].map(([scale,label]) => <button key={String(scale)} className={textScale === scale ? "active" : ""} onClick={() => { setTextScale(scale as number); savePreference({ text_scale: Number(scale) * 1.3 }); }}>{label}</button>)}</div></div>
         </div>
         <div className="settings-section"><h2><LockKeyhole />{t.account}</h2><button className="setting-row destructive-row" onClick={signOut}><span><strong>{t.signOut}</strong><small>{lang === "de" ? "Dieses Gerät sicher trennen" : "Disconnect this device securely"}</small></span><LogOut /></button></div>
@@ -1648,16 +1688,17 @@ export function WortnahApp() {
               <div className="segment-control">{(["purpose","topic","detail"] as ChoiceLevel[]).map((level, index) => <button key={level} className={contentLevel === level ? "active" : ""} onClick={() => { setContentLevel(level); closeChoiceEditor(); }}><small>{lang === "de" ? "Ebene" : "Level"} {index + 1}</small>{level === "purpose" ? (lang === "de" ? "Bereiche" : "Purposes") : level === "topic" ? (lang === "de" ? "Themen" : "Topics") : (lang === "de" ? "Wörter & Sätze" : "Words & phrases")}</button>)}</div>
               <div className="content-actions"><label className="admin-search"><Search /><input value={contentSearch} onChange={(event) => setContentSearch(event.target.value)} placeholder={lang === "de" ? "Wort suchen …" : "Search words …"} /></label><button className="primary-button" onClick={() => startChoiceEditor()}><Plus />{lang === "de" ? "Wort hinzufügen" : "Add entry"}</button></div>
             </div>
+            {editorNotice && <p className="editor-notice" role="status"><Check />{editorNotice}</p>}
             {(creatingChoice || editingChoice) && <div className="editor-card">
-              <div className="editor-heading"><div><span className="level-badge">{adminLevelLabel}</span><h2>{editingChoice ? (lang === "de" ? "Eintrag bearbeiten" : "Edit entry") : (lang === "de" ? "Eintrag hinzufügen" : "Add entry")}</h2><p>{purposeLabel(contentLevel === "purpose" ? null : choiceDraft.purpose_key)}{contentLevel === "detail" && choiceDraft.topic_key ? ` › ${topicLabel(choiceDraft.topic_key)}` : ""}</p></div><button onClick={closeChoiceEditor}>{lang === "de" ? "Abbrechen" : "Cancel"}</button></div>
-              <div className="editor-grid"><label>{lang === "de" ? "Deutsch" : "German"}<input value={choiceDraft.label_de} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, label_de: event.target.value }))} /></label><label>{lang === "de" ? "Englisch (optional)" : "English (optional)"}<input value={choiceDraft.label_en} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, label_en: event.target.value }))} /></label>{contentLevel !== "purpose" && <label>{lang === "de" ? "Bereich" : "Purpose"}<select value={choiceDraft.purpose_key} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, purpose_key: event.target.value, topic_key: "" }))}>{purposes.map((item) => <option key={item.id} value={item.id}>{item.de}</option>)}{customPurposes.map((item) => <option key={item.id} value={item.option_key}>{item.label_de}</option>)}</select></label>}{contentLevel === "detail" && <label>{lang === "de" ? "Thema" : "Topic"}<select value={choiceDraft.topic_key} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, topic_key: event.target.value }))}><option value="">{lang === "de" ? "Thema wählen" : "Choose topic"}</option>{filteredTopicOptions.map((item) => <option key={item.id} value={item.option_key}>{item.label_de}</option>)}</select></label>}<label>{lang === "de" ? "Reihenfolge" : "Order"}<input type="number" min="0" value={choiceDraft.sort_order} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, sort_order: Number(event.target.value) }))} /></label><label>{lang === "de" ? "Priorität" : "Priority"}<select value={choiceDraft.priority} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, priority: event.target.value as CustomChoice["priority"] }))}><option value="high">{lang === "de" ? "Hoch" : "High"}</option><option value="medium">{lang === "de" ? "Mittel" : "Medium"}</option><option value="low">{lang === "de" ? "Niedrig" : "Low"}</option></select></label></div>
-              <div className="editor-toggles"><button className={choiceDraft.is_published ? "on" : ""} onClick={() => setChoiceDraft((draft) => ({ ...draft, is_published: !draft.is_published }))}>{choiceDraft.is_published ? <Eye /> : <EyeOff />}{lang === "de" ? "Für Werner sichtbar" : "Visible to Werner"}</button>{contentLevel === "detail" && <button className={choiceDraft.practice_eligible ? "on" : ""} onClick={() => setChoiceDraft((draft) => ({ ...draft, practice_eligible: !draft.practice_eligible }))}>{choiceDraft.practice_eligible ? <ToggleRight /> : <ToggleLeft />}{lang === "de" ? "Auch zum Üben" : "Also for practice"}</button>}</div>{error && <p className="form-error">{error}</p>}<button className="primary-button save-editor" onClick={saveChoice}><Check />{lang === "de" ? "Speichern" : "Save"}</button>
+              <div className="editor-heading"><div><span className="level-badge">{adminLevelLabel}</span><h2>{editingChoice ? "Eintrag bearbeiten" : "Eintrag hinzufügen"}</h2><p>{purposeLabel(contentLevel === "purpose" ? null : choiceDraft.purpose_key)}{contentLevel === "detail" && choiceDraft.topic_key ? ` › ${topicLabel(choiceDraft.topic_key)}` : ""}</p></div><button className="editor-cancel" onClick={closeChoiceEditor} disabled={editorBusy}>Abbrechen</button></div>
+              <div className="editor-workspace"><div className="editor-grid"><label className="editor-primary-field">Deutscher Text<input value={choiceDraft.label_de} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, label_de: event.target.value }))} placeholder={contentLevel === "detail" ? "Zum Beispiel: Bitte bring mir Wasser." : "Bezeichnung für Werner"} autoFocus /></label>{contentLevel !== "purpose" && <label>Bereich<select value={choiceDraft.purpose_key} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, purpose_key: event.target.value, topic_key: "" }))}>{purposes.map((item) => <option key={item.id} value={item.id}>{item.de}</option>)}{customPurposes.map((item) => <option key={item.id} value={item.option_key}>{item.label_de}</option>)}</select></label>}{contentLevel === "detail" && <label>Thema<select value={choiceDraft.topic_key} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, topic_key: event.target.value }))}><option value="">Thema wählen</option>{filteredTopicOptions.map((item) => <option key={item.id} value={item.option_key}>{item.label_de}</option>)}</select></label>}<label>Reihenfolge<input type="number" min="0" value={choiceDraft.sort_order} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, sort_order: Number(event.target.value) }))} /></label><label>Priorität<select value={choiceDraft.priority} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, priority: event.target.value as CustomChoice["priority"] }))}><option value="high">Hoch</option><option value="medium">Mittel</option><option value="low">Niedrig</option></select></label></div><aside className="editor-preview"><span>Vorschau für Werner</span><strong>{choiceDraft.label_de.trim() || "Ihr deutscher Text"}</strong><small>{choiceDraft.is_published ? "Sichtbar" : "Ausgeblendet"} · {adminLevelLabel}</small></aside></div>
+              <div className="editor-actions"><div className="editor-toggles"><button className={choiceDraft.is_published ? "on" : ""} onClick={() => setChoiceDraft((draft) => ({ ...draft, is_published: !draft.is_published }))} disabled={editorBusy}>{choiceDraft.is_published ? <Eye /> : <EyeOff />}Für Werner sichtbar</button>{contentLevel === "detail" && <button className={choiceDraft.practice_eligible ? "on" : ""} onClick={() => setChoiceDraft((draft) => ({ ...draft, practice_eligible: !draft.practice_eligible }))} disabled={editorBusy}>{choiceDraft.practice_eligible ? <ToggleRight /> : <ToggleLeft />}Auch zum Üben</button>}</div><button className="primary-button save-editor" onClick={saveChoice} disabled={editorBusy}><Check />{editorBusy ? "Wird gespeichert …" : "Speichern"}</button></div>{error && <p className="form-error" role="alert">{error}</p>}
             </div>}
             <div className="manager-summary"><strong>{contentLoading ? "…" : adminChoices.length}</strong><span>{lang === "de" ? `Einträge auf ${adminLevelLabel}` : `entries on ${adminLevelLabel}`}</span></div>
             <div className="manager-list">{!contentLoading && adminChoices.length === 0 ? <p className="quiet-empty">{lang === "de" ? "Keine Einträge gefunden." : "No entries found."}</p> : adminChoices.map((item, index) => <article key={item.id} className={!item.is_published ? "hidden-item" : ""}>
               <GripVertical className="drag-handle" aria-hidden="true" />
               <button className="publish-toggle" onClick={() => toggleChoicePublished(item)} aria-label={item.is_published ? (lang === "de" ? "Ausblenden" : "Hide") : (lang === "de" ? "Einblenden" : "Show")}>{item.is_published ? <Eye /> : <EyeOff />}</button>
-              <div><strong>{item.label_de}</strong><small>{purposeLabel(item.purpose_key)}{item.topic_key ? ` › ${topicLabel(item.topic_key)}` : ""} · {item.label_en || (lang === "de" ? "Keine englische Übersetzung" : "No English translation")}</small></div>
+              <div><strong>{item.label_de}</strong><small>{purposeLabel(item.purpose_key)}{item.topic_key ? ` › ${topicLabel(item.topic_key)}` : ""}</small></div>
               <div className="reorder-actions"><button onClick={() => void moveChoice(item, -1)} disabled={Boolean(contentSearch.trim()) || index === 0} aria-label={lang === "de" ? "Nach oben" : "Move up"}><ArrowUp /></button><button onClick={() => void moveChoice(item, 1)} disabled={Boolean(contentSearch.trim()) || index === adminChoices.length - 1} aria-label={lang === "de" ? "Nach unten" : "Move down"}><ArrowDown /></button></div>
               <span className={`priority-tag ${item.priority}`}>{item.priority}</span><button className="icon-action" onClick={() => startChoiceEditor(item)} aria-label={lang === "de" ? "Bearbeiten" : "Edit"}><Pencil /></button><button className="icon-action danger" onClick={() => deleteChoice(item)} aria-label={lang === "de" ? "Löschen" : "Delete"}><Trash2 /></button>
             </article>)}</div>
@@ -1676,21 +1717,22 @@ export function WortnahApp() {
               <div className="segment-control search-level-tabs">{([1,2,3,4] as const).map((level) => <button key={level} className={adminSearchLevel === level ? "active" : ""} onClick={() => { setAdminSearchLevel(level); closeSearchEditor(); }}><small>{lang === "de" ? "Ebene" : "Level"}</small>{level}</button>)}</div>
               <div className="content-actions"><label className="admin-search"><Search /><input value={adminSearchText} onChange={(event) => setAdminSearchText(event.target.value)} placeholder={lang === "de" ? "Suchbegriff finden …" : "Find search entry …"} /></label><button className="primary-button" onClick={() => startSearchEditor()}><Plus />{lang === "de" ? "Suchbegriff hinzufügen" : "Add search entry"}</button></div>
             </div>
+            {editorNotice && <p className="editor-notice" role="status"><Check />{editorNotice}</p>}
             {(creatingSearchNode || editingSearchNode) && <div className="editor-card">
-              <div className="editor-heading"><div><span className="level-badge">{lang === "de" ? `Ebene ${adminSearchLevel}` : `Level ${adminSearchLevel}`}</span><h2>{editingSearchNode ? (lang === "de" ? "Sucheintrag bearbeiten" : "Edit search entry") : (lang === "de" ? "Sucheintrag hinzufügen" : "Add search entry")}</h2><p>{searchNodeLabel(adminSearchLevel === 1 ? null : searchDraft.parent_key)}</p></div><button onClick={closeSearchEditor}>{lang === "de" ? "Abbrechen" : "Cancel"}</button></div>
-              <div className="editor-grid"><label>{lang === "de" ? "Deutsch" : "German"}<input value={searchDraft.label_de} onChange={(event) => setSearchDraft((draft) => ({ ...draft, label_de: event.target.value }))} /></label><label>{lang === "de" ? "Englisch (optional)" : "English (optional)"}<input value={searchDraft.label_en} onChange={(event) => setSearchDraft((draft) => ({ ...draft, label_en: event.target.value }))} /></label>{adminSearchLevel > 1 && <label>{lang === "de" ? "Übergeordneter Bereich" : "Parent section"}<select value={searchDraft.parent_key} onChange={(event) => setSearchDraft((draft) => ({ ...draft, parent_key: event.target.value }))}><option value="">{lang === "de" ? "Bereich wählen" : "Choose section"}</option>{searchParentOptions.map((item) => <option key={item.option_key} value={item.option_key}>{item.label_de}</option>)}</select></label>}<label>{lang === "de" ? "Reihenfolge" : "Order"}<input type="number" min="0" value={searchDraft.sort_order} onChange={(event) => setSearchDraft((draft) => ({ ...draft, sort_order: Number(event.target.value) }))} /></label><label>{lang === "de" ? "Fertiger deutscher Suchsatz (nur am Ende)" : "Final German search phrase (leaf only)"}<input value={searchDraft.query_de} onChange={(event) => setSearchDraft((draft) => ({ ...draft, query_de: event.target.value }))} /></label><label>{lang === "de" ? "Fertiger englischer Suchsatz (optional)" : "Final English search phrase (optional)"}<input value={searchDraft.query_en} onChange={(event) => setSearchDraft((draft) => ({ ...draft, query_en: event.target.value }))} /></label></div>
-              <div className="editor-toggles"><button className={searchDraft.is_published ? "on" : ""} onClick={() => setSearchDraft((draft) => ({ ...draft, is_published: !draft.is_published }))}>{searchDraft.is_published ? <Eye /> : <EyeOff />}{lang === "de" ? "Für Werner sichtbar" : "Visible to Werner"}</button></div>{error && <p className="form-error">{error}</p>}<button className="primary-button save-editor" onClick={saveSearchNode}><Check />{lang === "de" ? "Speichern" : "Save"}</button>
+              <div className="editor-heading"><div><span className="level-badge">Ebene {adminSearchLevel}</span><h2>{editingSearchNode ? "Sucheintrag bearbeiten" : "Sucheintrag hinzufügen"}</h2><p>{searchNodeLabel(adminSearchLevel === 1 ? null : searchDraft.parent_key)}</p></div><button className="editor-cancel" onClick={closeSearchEditor} disabled={editorBusy}>Abbrechen</button></div>
+              <div className="editor-workspace"><div className="editor-grid"><label className="editor-primary-field">Deutsche Bezeichnung<input value={searchDraft.label_de} onChange={(event) => setSearchDraft((draft) => ({ ...draft, label_de: event.target.value }))} placeholder="Kurze Auswahl für Werner" autoFocus /></label>{adminSearchLevel > 1 && <label>Übergeordneter Bereich<select value={searchDraft.parent_key} onChange={(event) => setSearchDraft((draft) => ({ ...draft, parent_key: event.target.value }))}><option value="">Bereich wählen</option>{searchParentOptions.map((item) => <option key={item.option_key} value={item.option_key}>{item.label_de}</option>)}</select></label>}<label>Reihenfolge<input type="number" min="0" value={searchDraft.sort_order} onChange={(event) => setSearchDraft((draft) => ({ ...draft, sort_order: Number(event.target.value) }))} /></label><label className="editor-primary-field">Fertiger deutscher Suchsatz<small className="field-help">Nur bei einem letzten Schritt eintragen. Sonst führt die Auswahl zur nächsten Ebene.</small><input value={searchDraft.query_de} onChange={(event) => setSearchDraft((draft) => ({ ...draft, query_de: event.target.value }))} placeholder="Zum Beispiel: Wetter heute in Berlin" /></label></div><aside className="editor-preview"><span>Vorschau für Werner</span><strong>{searchDraft.label_de.trim() || "Ihre Auswahl"}</strong><small>{searchDraft.query_de.trim() ? `Sucht nach: ${searchDraft.query_de.trim()}` : "Führt zur nächsten Ebene"}</small></aside></div>
+              <div className="editor-actions"><div className="editor-toggles"><button className={searchDraft.is_published ? "on" : ""} onClick={() => setSearchDraft((draft) => ({ ...draft, is_published: !draft.is_published }))} disabled={editorBusy}>{searchDraft.is_published ? <Eye /> : <EyeOff />}Für Werner sichtbar</button></div><button className="primary-button save-editor" onClick={saveSearchNode} disabled={editorBusy}><Check />{editorBusy ? "Wird gespeichert …" : "Speichern"}</button></div>{error && <p className="form-error" role="alert">{error}</p>}
             </div>}
             <div className="manager-summary"><strong>{contentLoading ? "…" : filteredAdminSearchNodes.length}</strong><span>{lang === "de" ? `Einträge auf Ebene ${adminSearchLevel}` : `entries on level ${adminSearchLevel}`}</span></div>
             <div className="manager-list search-manager-list">{!contentLoading && filteredAdminSearchNodes.length === 0 ? <p className="quiet-empty">{lang === "de" ? "Keine Einträge gefunden." : "No entries found."}</p> : filteredAdminSearchNodes.map((item) => <article key={item.id} className={!item.is_published ? "hidden-item" : ""}><button className="publish-toggle" onClick={() => toggleSearchPublished(item)} aria-label={item.is_published ? (lang === "de" ? "Ausblenden" : "Hide") : (lang === "de" ? "Einblenden" : "Show")}>{item.is_published ? <Eye /> : <EyeOff />}</button><div><strong>{item.label_de}</strong><small>{adminSearchLevel > 1 ? `${searchNodeLabel(item.parent_key)} · ` : ""}{item.query_de || (lang === "de" ? "Weiter zur nächsten Ebene" : "Continues to the next level")}</small></div><button className="icon-action" onClick={() => startSearchEditor(item)} aria-label={lang === "de" ? "Bearbeiten" : "Edit"}><Pencil /></button><button className="icon-action danger" onClick={() => deleteSearchNode(item)} aria-label={lang === "de" ? "Löschen" : "Delete"}><Trash2 /></button></article>)}</div>
           </section>}
           </>}
 
-          {adminSection === "practice" && <section className="admin-panel content-manager"><div className="content-toolbar"><div><h2>{lang === "de" ? "Übungsinhalte" : "Practice content"}</h2><p>{lang === "de" ? `${practiceItems.length} Wörter und Sätze` : `${practiceItems.length} words and phrases`}</p></div><button className="primary-button" onClick={() => startPracticeEditor()}><Plus />{lang === "de" ? "Neue Übung" : "New practice"}</button></div>{(creatingPractice || editingPractice) && <div className="editor-card"><div className="editor-heading"><h2>{editingPractice ? (lang === "de" ? "Übung bearbeiten" : "Edit practice") : (lang === "de" ? "Übung hinzufügen" : "Add practice")}</h2><button onClick={closePracticeEditor}>{lang === "de" ? "Abbrechen" : "Cancel"}</button></div><div className="editor-grid"><label>{lang === "de" ? "Deutsch" : "German"}<input value={practiceDraft.label_de} onChange={(event) => setPracticeDraft((draft) => ({ ...draft, label_de: event.target.value }))} /></label><label>{lang === "de" ? "Englisch (optional)" : "English (optional)"}<input value={practiceDraft.label_en} onChange={(event) => setPracticeDraft((draft) => ({ ...draft, label_en: event.target.value }))} /></label><label>{lang === "de" ? "Schwierigkeit" : "Difficulty"}<select value={practiceDraft.difficulty} onChange={(event) => setPracticeDraft((draft) => ({ ...draft, difficulty: event.target.value as PracticeItem["difficulty"] }))}><option value="easy">{lang === "de" ? "Leicht" : "Easy"}</option><option value="medium">{lang === "de" ? "Mittel" : "Medium"}</option></select></label><label>{lang === "de" ? "Reihenfolge" : "Order"}<input type="number" min="0" value={practiceDraft.sort_order} onChange={(event) => setPracticeDraft((draft) => ({ ...draft, sort_order: Number(event.target.value) }))} /></label></div>{error && <p className="form-error">{error}</p>}<button className="primary-button save-editor" onClick={savePracticeItem}><Check />{lang === "de" ? "Speichern" : "Save"}</button></div>}<div className="manager-list practice-manager-list">{practiceItems.map((item) => <article key={item.id}><button className="practice-preview" onClick={() => speak(item.label_de)} aria-label={lang === "de" ? "Anhören" : "Listen"}><Volume2 /></button><div><strong>{item.label_de}</strong><small>{item.label_en || (lang === "de" ? "Keine englische Übersetzung" : "No English translation")}</small></div><span className={`difficulty-tag ${item.difficulty}`}>{item.difficulty === "easy" ? (lang === "de" ? "Leicht" : "Easy") : (lang === "de" ? "Mittel" : "Medium")}</span><button className="icon-action" onClick={() => startPracticeEditor(item)} aria-label={lang === "de" ? "Bearbeiten" : "Edit"}><Pencil /></button><button className="icon-action danger" onClick={() => deletePracticeItem(item)} aria-label={lang === "de" ? "Löschen" : "Delete"}><Trash2 /></button></article>)}</div></section>}
+          {adminSection === "practice" && <section className="admin-panel content-manager"><div className="content-toolbar"><div><h2>Übungsinhalte</h2><p>{practiceItems.length} Wörter und Sätze</p></div><button className="primary-button" onClick={() => { setEditorNotice(""); startPracticeEditor(); }}><Plus />Neue Übung</button></div>{editorNotice && <p className="editor-notice" role="status"><Check />{editorNotice}</p>}{(creatingPractice || editingPractice) && <div className="editor-card"><div className="editor-heading"><div><span className="level-badge">Üben</span><h2>{editingPractice ? "Übung bearbeiten" : "Übung hinzufügen"}</h2></div><button className="editor-cancel" onClick={closePracticeEditor} disabled={editorBusy}>Abbrechen</button></div><div className="editor-workspace"><div className="editor-grid"><label className="editor-primary-field">Deutscher Übungstext<input value={practiceDraft.label_de} onChange={(event) => setPracticeDraft((draft) => ({ ...draft, label_de: event.target.value }))} placeholder="Wort oder kurzer Satz" autoFocus /></label><label>Schwierigkeit<select value={practiceDraft.difficulty} onChange={(event) => setPracticeDraft((draft) => ({ ...draft, difficulty: event.target.value as PracticeItem["difficulty"] }))}><option value="easy">Leicht</option><option value="medium">Mittel</option></select></label><label>Reihenfolge<input type="number" min="0" value={practiceDraft.sort_order} onChange={(event) => setPracticeDraft((draft) => ({ ...draft, sort_order: Number(event.target.value) }))} /></label></div><aside className="editor-preview"><span>Vorschau für Werner</span><strong>{practiceDraft.label_de.trim() || "Ihr Übungstext"}</strong><small>{practiceDraft.difficulty === "easy" ? "Leicht" : "Mittel"}</small></aside></div><div className="editor-actions"><span className="editor-guidance">Deutsch ist für diese Version die einzige sichtbare Sprache.</span><button className="primary-button save-editor" onClick={savePracticeItem} disabled={editorBusy}><Check />{editorBusy ? "Wird gespeichert …" : "Speichern"}</button></div>{error && <p className="form-error" role="alert">{error}</p>}</div>}<div className="manager-list practice-manager-list">{practiceItems.map((item) => <article key={item.id}><button className="practice-preview" onClick={() => speak(item.label_de)} aria-label="Anhören"><Volume2 /></button><div><strong>{item.label_de}</strong><small>Übung · {item.difficulty === "easy" ? "leicht" : "mittel"}</small></div><span className={`difficulty-tag ${item.difficulty}`}>{item.difficulty === "easy" ? "Leicht" : "Mittel"}</span><button className="icon-action" onClick={() => startPracticeEditor(item)} aria-label="Bearbeiten"><Pencil /></button><button className="icon-action danger" onClick={() => deletePracticeItem(item)} aria-label="Löschen"><Trash2 /></button></article>)}</div></section>}
 
           {adminSection === "activity" && <section className="admin-panel activity-panel"><div className="panel-heading"><div><h2>{lang === "de" ? "Aktivitätsverlauf" : "Activity timeline"}</h2><p>{lang === "de" ? "Neueste Aktivität zuerst" : "Newest activity first"}</p></div><ClipboardCheck /></div><div className="activity-timeline">{activityEvents.length === 0 ? <p className="quiet-empty">{lang === "de" ? "Noch keine Aktivität erfasst." : "No activity recorded yet."}</p> : activityEvents.map((event) => <article key={event.id}><span className={`activity-dot ${event.event_type}`} /><div><strong>{activityLabel(event)}</strong><small>{event.screen_key ? event.screen_key.replaceAll("_", " ") : (lang === "de" ? "Wortnah" : "Wortnah")}</small></div><time>{new Intl.DateTimeFormat(lang === "de" ? "de-DE" : "en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(event.occurred_at))}</time></article>)}</div></section>}
 
-          {adminSection === "settings" && <section className="admin-panel admin-settings-panel"><div className="panel-heading"><div><h2>{lang === "de" ? "Maximale Auswahl" : "Maximum choices"}</h2><p>{lang === "de" ? "Werner kann selbst eine Zahl bis zu diesem Maximum wählen." : "Werner can choose any count up to this maximum."}</p></div><Settings2 /></div><div className="maximum-choice-grid">{availablePatientChoiceCounts(DEFAULT_ADMIN_CHOICE_MAXIMUM).map((count) => <button key={count} className={adminChoiceMaximum === count ? "active" : ""} onClick={() => void saveAdminChoiceMaximum(count)}><strong>{count}</strong><span>{lang === "de" ? "Felder" : "choices"}</span></button>)}</div>{error && <p className="form-error">{error}</p>}<div className="settings-note"><ShieldCheck /><p>{lang === "de" ? "Die Einstellung gilt gemeinsam für Kommunikation, Internetsuche und Üben." : "This setting applies to communication, internet search and practice."}</p></div></section>}
+          {adminSection === "settings" && <section className="admin-panel admin-settings-panel"><div className="panel-heading"><div><h2>Maximale Auswahl</h2><p>Werner wählt selbst 2, 4, 6, 8, 10 oder 12 Felder – bis zu Ihrem Maximum.</p></div><Settings2 /></div><div className="maximum-choice-grid">{availablePatientChoiceCounts(DEFAULT_ADMIN_CHOICE_MAXIMUM).map((count) => <button key={count} className={adminChoiceMaximum === count ? "active" : ""} aria-pressed={adminChoiceMaximum === count} disabled={settingsBusy} onClick={() => void saveAdminChoiceMaximum(count)}><strong>{count}</strong><span>Felder</span></button>)}</div>{settingsBusy && <p className="settings-saving" role="status">Einstellung wird gespeichert …</p>}{editorNotice && <p className="editor-notice" role="status"><Check />{editorNotice}</p>}{error && <p className="form-error">{error}</p>}<div className="settings-note"><ShieldCheck /><p>Die Einstellung gilt gemeinsam für Kommunikation, Internetsuche und Üben. Werner kann seine eigene Zahl jederzeit in „Meine Einstellungen“ oder oben in der Leiste ändern.</p></div></section>}
         </div>
       </div>
     </main>

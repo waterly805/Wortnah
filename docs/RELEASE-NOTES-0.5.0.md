@@ -35,3 +35,13 @@ This release completes the seven agreed usability and reliability changes.
 - 20 focused behavior checks pass.
 - The app module parses successfully.
 - Production contains 36 of 36 reviewed Internet-search audio assets.
+
+## Public production publication
+
+Published 9 September 2026. Sites reports a successful production deployment, and the Site audience is public (anyone with the link).
+
+https://wortnah-kommunikation.danny-ly-1897.chatgpt.site
+
+The full production build succeeds. Of 25 automated checks, 24 pass; the starter component catalog CSS check fails because the generated output does not include its expected `scrollbar-width: thin` utility. All focused Wortnah login, guided-search, choice-policy, private-audio, and fallback checks pass. No application source was changed during publication.
+
+An anonymous HTTP request returns 200. The live browser shows the three profiles and the explicit first access-code step. Successful two-step login, guided-search interaction, downloaded MP3 playback, and device-voice playback still require a signed-in live browser session; they are not yet certified by this publication check.

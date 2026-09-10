@@ -33,11 +33,22 @@ rsync -a \
   --exclude '.sites-runtime/' \
   --exclude '.wrangler/' \
   --exclude '.pnpm-store/' \
+  --exclude 'scripts/publish-github-and-supabase.sh' \
   --exclude 'audio-import/ElevenLabs-Audio/' \
   "${project_root}/" "${release_dir}/"
 rm -rf "${release_dir}/supabase/functions/wortnah-natural-voice"
 
 cd "${release_dir}"
+
+git add -A
+git diff --cached --check
+if ! git diff --cached --quiet; then
+  git commit -m "Complete Wortnah 0.5.0 guided search audio and login"
+  git push origin main
+else
+  echo "GitHub already contains the current source."
+fi
+
 if [[ ! -f supabase/config.toml ]]; then
   "${supabase_cli[@]}" init
 fi
@@ -51,15 +62,6 @@ fi
 if ! "${supabase_cli[@]}" secrets list --project-ref "${project_ref}" | grep -q 'ELEVENLABS_API_KEY'; then
   echo "ELEVENLABS_API_KEY is not configured in Supabase. Add it before publishing." >&2
   exit 1
-fi
-
-git add -A
-git diff --cached --check
-if ! git diff --cached --quiet; then
-  git commit -m "Complete Wortnah 0.5.0 guided search audio and login"
-  git push origin main
-else
-  echo "GitHub already contains the current source."
 fi
 
 echo "Reviewing and applying the pending database migration..."

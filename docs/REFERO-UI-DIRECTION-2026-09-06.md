@@ -21,3 +21,14 @@ Primary direction: patient-friendly learning cards on a white and warm-sand canv
 | Three compact progress cards | Base44 Language Games | Shows orientation without making therapy feel like a test. |
 | White and warm-sand surfaces | August Health | Keeps the screen calm and readable. |
 | Blue only for the next action | August Health | Preserves a clear action hierarchy. |
+
+## 0.5.1 companion editor reference lock
+
+The companion editor revision also reviewed Shopify's **Add product editor** (`49dc1180-3d46-423a-9233-99e0b0c993e0`) and **Adding product** flow (`5394`). The useful pattern is its grouped required fields, stable editing context, clear save action, and visible saved confirmation. Wortnah keeps its own calmer palette and larger controls.
+
+| Decision | Source | Why |
+| --- | --- | --- |
+| Required German text spans the form width | Shopify Add product editor | Makes the primary content unmistakable before secondary settings. |
+| Werner preview sits beside fields on wide screens | Shopify editor side rail + existing Wortnah preview | Connects the saved text to what Werner will see. |
+| Save state and success appear at the editor boundary | Shopify Adding product flow | Prevents uncertain duplicate saves and confirms persistence. |
+| Form and preview stack on smaller screens | Accessibility requirement | Keeps controls readable and prevents clipping on tablet and phone. |

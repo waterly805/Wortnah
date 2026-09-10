@@ -28,26 +28,16 @@ An earlier failed import stored an unused copy under an older space. Do not use 
 
 ## Source and documentation
 
-- Canonical repository: `waterly805/Wortnah`
-- Local working copy: `/Users/DL/Documents/ChatGPT/Wortnah`
-- Durable project-document archive: `/Users/DL/Library/CloudStorage/OneDrive-Personal/ChatGPT Work Personal/Wortnah`
-- Live project state: `docs/PROJECT_STATE.md`
-- Working workflow: `docs/WORKFLOW.md`
+- Working source: `/Users/DL/Documents/ChatGPT/Wortnah`
+- Durable project documentation: `/Users/DL/Library/CloudStorage/OneDrive-Personal/ChatGPT Work Personal/Wortnah`
 - Current implementation log: `docs/IMPLEMENTATION-LOG-2026-09-07.md`
-- Current acceptance checklist: `docs/LIVE-ACCEPTANCE-CHECKLIST-0.5.0.md`
-- Current release notes: `docs/RELEASE-NOTES-0.5.0.md`
+- Current acceptance checklist: `docs/LIVE-ACCEPTANCE-CHECKLIST-0.4.0.md`
 - Audio manifest: `audio-import/wortnah-audio-intake-manifest.json`
 
-GitHub is the canonical technical source of truth. The local folder is a working clone. OneDrive/SharePoint holds durable human-facing copies and release artifacts, not a competing implementation-state tracker.
-
 ## Release checks
-
-Start by reading `docs/PROJECT_STATE.md` and `docs/WORKFLOW.md`.
 
 Run the bounded production build through `scripts/build-verified.sh` or the configured Sites environment. Run the focused tests for audio contract/playback, choice policy, patient workflow, and rendered HTML. Validate the audio manifest before import.
 
 For Supabase changes, compare live migrations and function versions after deployment. For audio, verify active-space registry rows, matching private objects, and missing-path count rather than relying on an upload completion message.
 
 For Sites, use the project ID from `.openai/hosting.json`, push the exact source revision with a short-lived per-command credential, package the corresponding successful build, save one version, deploy it, and poll to a terminal success or failure state. Open the returned production URL only after success.
-
-After deployment, run the matching live acceptance checklist and record the deployed revision and verification result in `docs/PROJECT_STATE.md`. A release is not complete until the source, backend, deployment and documentation agree.

@@ -165,3 +165,50 @@ Date: 9 September 2026
 - Passed 20 focused choice, patient-flow, guided-search, authentication, and audio checks.
 - Parsed the full application module successfully and completed the client half of the production build before the interrupted local dependency cache prevented the server half.
 - Confirmed the full 180-file audio registry remains present, including all 36 Internet-search phrases.
+
+## Batch 33: production backend release
+
+Date: 9 September 2026
+
+- Applied the `internet_search_hierarchy` migration to production and confirmed it in Supabase migration history.
+- Seeded 171 guided-search rows across the current Wortnah spaces.
+- Deployed the verified `pilot-login`, `wortnah-audio`, and `wortnah-audio-import` functions.
+- Re-ran 13 focused patient-flow, choice-policy, guided-search, and audio checks successfully.
+- Kept Site version 1 live while the updated Site source transfer and public-access change remain blocked by this session's restricted Sites connection and approval policy.
+
+## Batch 34: public Wortnah 0.5.0 publication
+
+Date: 9 September 2026
+
+- Restored the exact locked local dependencies and completed the full production build.
+- Pushed the current application source to the existing Site repository at `829aac99e7d96d8f8d2eb7d527731c44abbeaa44`.
+- Packaged the successful build with the official Sites helper, saved Site version 2, and received terminal deployment status `succeeded`.
+- Changed Site access to `public` under explicit user authorization and confirmed the returned public access policy.
+- Verified an anonymous HTTP 200 and the live profile selection / first access-code screen.
+- Passed 24 of 25 automated checks, including every focused Wortnah behavior check. The unrelated starter-catalog CSS check expects an absent scrollbar utility.
+- Live authenticated login, guided-search, reviewed MP3 playback, and device-voice playback remain pending a user-provided browser sign-in. No credentials were requested in chat or persisted. Supabase was not changed.
+
+## Batch 35: Wortnah 0.5.1 repair and verification
+
+Date: 10 September 2026
+
+- Confirmed the active space maximum is 12 and the public Site audience is already public.
+- Routed every guided-search preview and repeat through the reviewed/generated private MP3 pipeline before device fallback.
+- Added deterministic selection of the strongest available German device voice and tests that prefer natural voices over compact robotic voices.
+- Cleared the four-digit keypad immediately on every submission and gave access code and daily PIN distinct component identities.
+- Kept Werner's personal 2/4/6/8/10/12 selection within the Admin maximum and made the field-count control easier to understand.
+- Removed current English switches and editor inputs while preserving existing English database values during German edits.
+- Made communication, guided-search, and practice saves return an affected row, prevent duplicate submission, and show clear saved or failed states.
+- Redesigned the companion editors with grouped German fields, hierarchy context, a Werner preview, responsive stacking, and one primary save action.
+- Completed the production build and lint with no errors; all 30 automated checks passed.
+- Rechecked the protected audio store and found 180 MP3 objects for Werner's active space. Supabase required no release change.
+
+## Batch 36: public deployment and canonical GitHub reconciliation
+
+Date: 10 September 2026
+
+- Copied the 0.5.1 implementation plan, release notes, live checklist, implementation log, Refero direction, product contract and verified source archive to the existing Wortnah OneDrive folder.
+- Pushed the exact verified Site source commit `6d5929d80b28497ed6afdd8beca2f35bc7e67b21`, saved Site version 3 and received terminal production deployment status `succeeded`.
+- Confirmed the Site audience is public, the production URL returns HTTP 200, and the anonymous landing page displays Werner, Admin 1 and Admin 2.
+- Connected the local working folder to canonical GitHub repository `waterly805/Wortnah`, fetched `origin/main`, and preserved the new `AGENTS.md`, `docs/PROJECT_STATE.md`, `docs/WORKFLOW.md`, and maintainer workflow guidance while reconciling the verified 0.5.1 source.
+- Authenticated Werner, device fallback, responsive layout and disposable Admin CRUD checks remain open in the live acceptance checklist. No credential value was read, recorded or requested in chat.

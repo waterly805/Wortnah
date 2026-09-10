@@ -9,7 +9,7 @@
 ## Patient experience
 
 - Primary modes: `Kommunikation`, `Internet suchen`, and `Üben`.
-- Choice counts are exactly 2, 4, 6, 8, 10, or 12, bounded by the companion-set maximum.
+- Choice counts are exactly 2, 4, 6, 8, 10, or 12. A companion sets the maximum, and Werner independently chooses any supported count up to that maximum.
 - First tap selects and previews audio. Second tap confirms the action.
 - Page auto-read and continuous reading are configurable. Automatic page reading uses the device voice to avoid paid generation.
 - Confirmed messages appear in patient history and support `Nochmal sprechen` and reuse/edit.
@@ -25,7 +25,8 @@
 
 ## Interface rules
 
-- Use German-first, plain language and large touch targets.
+- The current release is German-only. Hide English language controls and English editing fields until translation is ready, while preserving any existing English database values for a later release.
+- Use plain German and large touch targets.
 - Preserve the calm pastel palette across all 12 choices.
 - Keep the patient path visually simple; place management density only in companion views.
 - Maintain phone, tablet, and desktop layouts without clipped controls or overlapping navigation.

@@ -49,8 +49,29 @@ test("profile and PIN checks cannot be submitted twice while loading", () => {
   assert.doesNotMatch(pinPad, /setTimeout\(\(\) => onComplete/);
   assert.match(pinPad, /disabled=\{busy\}/);
   assert.doesNotMatch(pinPad, /onComplete=\{onComplete\}/);
+  assert.match(pinPad, /const submittedPin = pin; setPin\(""\); onComplete\(submittedPin\)/);
   assert.match(appSource, /if \(!pilotProfile \|\| authBusy\) return/);
   assert.match(appSource, /if \(authBusy\) return/);
+});
+
+test("the current release exposes German only", () => {
+  assert.doesNotMatch(appSource, /setLang/);
+  assert.doesNotMatch(appSource, /Englisch \(optional\)/);
+  assert.doesNotMatch(appSource, /Switch to English/);
+});
+
+test("companion content writes verify the affected row and preserve hidden English on edits", () => {
+  const choiceStart = appSource.indexOf("const saveChoice");
+  const choiceEnd = appSource.indexOf("const toggleChoicePublished", choiceStart);
+  const choiceFlow = appSource.slice(choiceStart, choiceEnd);
+  assert.match(choiceFlow, /update\(payload\).*select\("id"\)\.single\(\)/s);
+  assert.doesNotMatch(choiceFlow.match(/const payload = \{[\s\S]*?\n    \};/)?.[0] ?? "", /label_en/);
+
+  const searchStart = appSource.indexOf("const saveSearchNode");
+  const searchEnd = appSource.indexOf("const toggleSearchPublished", searchStart);
+  const searchFlow = appSource.slice(searchStart, searchEnd);
+  assert.match(searchFlow, /update\(payload\).*select\("id"\)\.single\(\)/s);
+  assert.doesNotMatch(searchFlow.match(/const payload = \{[\s\S]*?\n    \};/)?.[0] ?? "", /label_en|query_en/);
 });
 
 test("login clearly separates access code and daily PIN and supports Enter", () => {

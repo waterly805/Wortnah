@@ -33,3 +33,15 @@
 ## Layout
 
 - Phone portrait, tablet, and desktop views have no clipped controls or overlapping navigation.
+
+## Publication check — 9 September 2026
+
+- [x] Sites deployment succeeded.
+- [x] Public access policy confirmed; anonymous HTTP 200.
+- [x] Live three-profile selection and explicit first login step visible.
+- [ ] Complete both login steps with valid credentials.
+- [ ] Navigate guided search and open its exact final query.
+- [ ] Play a downloaded reviewed MP3 in the live browser.
+- [ ] Confirm actual device speech after an unavailable audio response.
+
+Authenticated checks are pending browser sign-in. Automated contract checks are not a substitute for these live playback checks.
