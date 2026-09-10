@@ -231,3 +231,5 @@ Date: 10 September 2026
 - Registered `www.wort-nah.com` with the existing public Wortnah Site.
 - Confirmed the custom domain is pending GoDaddy DNS validation and SSL initialization; the existing platform URL remains active during setup.
 - Prepared the required GoDaddy CNAME and TXT records without changing unrelated DNS or storing the returned verification values in repository documentation.
+- Verified the saved GoDaddy records against public and authoritative DNS. The CNAME and ownership TXT resolve correctly; the certificate TXT is present on one GoDaddy authoritative nameserver while replication to the second remains pending.
+- Refreshed Sites and confirmed the custom-domain provider is active with no reported error; SSL remains pending validation, so the custom HTTPS address is not yet ready.
