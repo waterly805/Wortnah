@@ -18,6 +18,7 @@ This release makes Communication use one canonical Admin-managed hierarchy for W
 - `pilot-login` version 18 is active and returns the canonical space with the login handoff.
 - Lint and the production build pass.
 - All 41 automated checks pass.
-- Site deployment and an authenticated two-session Admin-to-Werner check remain before full live acceptance.
+- Sites version 4 deployed successfully from the exact verified implementation commit and remains public at the custom hostname.
+- An authenticated two-session Admin-to-Werner check remains before full live acceptance.
 
 Public Site: https://www.wort-nah.com

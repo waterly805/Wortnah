@@ -3,11 +3,12 @@
 > **Purpose:** This is the single live operational source of truth for what is currently implemented, verified, in progress, and safe to release. Read this file before substantial Wortnah work and update it before considering that work complete.
 
 Last repository review: 10 September 2026
-Current live app release: **0.5.1**; **0.5.3 implementation in progress** (includes the unpublished 0.5.2 interface/audio work)
+Current live app release: **0.5.3**
+Canonical 0.5.3 implementation commit: `9637603b85fb14e40fdd7fb36d5ccccbe01b265f`
 Canonical 0.5.1 implementation commit: `9a6c092b00f4eecb8de58fd198baa848f0c91d70`
 GitHub baseline before synchronization: `c847939df324af498945e8ed8fe7bd52e5a0ea2a`
 Production state recorded: **10 September 2026**
-Exact live deployment: **Sites version 3 succeeded from verified Site source commit `6d5929d80b28497ed6afdd8beca2f35bc7e67b21` and is public**
+Exact live deployment: **Sites version 4 succeeded from verified Site source commit `9637603b85fb14e40fdd7fb36d5ccccbe01b265f` and is public**
 
 ## 1. Sources of truth
 
@@ -161,7 +162,7 @@ Notes / decisions:
 
 ### FEATURE-002 — One communication source with live Admin-to-Werner synchronization
 
-Status: Implemented and backend-verified; Site deployment and authenticated live check remain
+Status: Deployed and backend-verified; authenticated two-session live check remains
 
 Goal:
 Make Admin and Werner read and update the same communication hierarchy so that field counts, pages, visibility, order, edits and deletions agree immediately.
@@ -179,7 +180,7 @@ Affected areas:
 - Backend/Supabase: Repair the canonical level-1 catalog and recover companion-created rows from stale pilot spaces.
 - Database/migrations: One idempotent data-repair migration; no new table.
 - Audio: No audio-pipeline change in this batch.
-- Deployment: A new verified Site version and updated `pilot-login` function are required after verification.
+- Deployment: Sites version 4 and `pilot-login` version 18 are live.
 
 Verification required:
 - [x] Focused automated checks; all 41 automated checks pass.

@@ -259,4 +259,6 @@ Date: 10 September 2026
 - Changed Werner's communication hierarchy to use successful database results at all levels, including intentionally empty levels after Admin hide/delete changes.
 - Added a protected Realtime subscription that refreshes current Admin and Werner communication data after inserts, updates and deletes.
 - Deployed `pilot-login` version 18 and verified the canonical live hierarchy contains 7 visible areas, 64 visible topics and 1,024 visible phrases.
-- Passed lint, the production build and all 41 automated checks. Site deployment and authenticated two-session live acceptance remain.
+- Passed lint, the production build and all 41 automated checks.
+- Pushed exact source commit `9637603b85fb14e40fdd7fb36d5ccccbe01b265f` to GitHub and the Sites source, saved Sites version 4, and received terminal deployment status `succeeded` while preserving the public audience and custom hostname.
+- Authenticated two-session live acceptance remains; no access code or PIN was requested, read or stored.

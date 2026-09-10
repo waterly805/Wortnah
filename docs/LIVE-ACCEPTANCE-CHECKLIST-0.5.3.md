@@ -13,7 +13,7 @@ Date: 10 September 2026
 
 ## Public and signed-in browser checks
 
-- [ ] The exact verified source is deployed successfully and the Site remains public.
+- [x] The exact verified source is deployed successfully as Sites version 4 and the Site remains public.
 - [ ] Werner sees the six approved areas and the recovered `Test` area.
 - [ ] Changing from 4 to 8 fields reveals additional areas and shows correct page controls when more rows exist than visible fields.
 - [ ] Admin levels 1, 2 and 3 show the same stored hierarchy used by Werner.
