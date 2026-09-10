@@ -211,7 +211,7 @@ Date: 10 September 2026
 - Pushed the exact verified Site source commit `6d5929d80b28497ed6afdd8beca2f35bc7e67b21`, saved Site version 3 and received terminal production deployment status `succeeded`.
 - Confirmed the Site audience is public, the production URL returns HTTP 200, and the anonymous landing page displays Werner, Admin 1 and Admin 2.
 - Connected the local working folder to canonical GitHub repository `waterly805/Wortnah`, fetched `origin/main`, and preserved the new `AGENTS.md`, `docs/PROJECT_STATE.md`, `docs/WORKFLOW.md`, and maintainer workflow guidance while reconciling the verified 0.5.1 source.
-- Pushed canonical 0.5.1 implementation commit `9a6c092058450f28ccaf2f60639894543573ae96` to GitHub `main` after the production build, lint, all 30 automated checks, runtime-file comparison and credential-pattern scan passed.
+- Pushed canonical 0.5.1 implementation commit `9a6c092b00f4eecb8de58fd198baa848f0c91d70` to GitHub `main` after the production build, lint, all 30 automated checks, runtime-file comparison and credential-pattern scan passed.
 - Authenticated Werner, device fallback, responsive layout and disposable Admin CRUD checks remain open in the live acceptance checklist. No credential value was read, recorded or requested in chat.
 
 ## Batch 37: workspace consolidation

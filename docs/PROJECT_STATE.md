@@ -4,7 +4,7 @@
 
 Last repository review: 10 September 2026
 Current app release: **0.5.1**
-Canonical 0.5.1 implementation commit: `9a6c092058450f28ccaf2f60639894543573ae96`
+Canonical 0.5.1 implementation commit: `9a6c092b00f4eecb8de58fd198baa848f0c91d70`
 GitHub baseline before synchronization: `c847939df324af498945e8ed8fe7bd52e5a0ea2a`
 Production state recorded: **10 September 2026**
 Exact live deployment: **Sites version 3 succeeded from verified Site source commit `6d5929d80b28497ed6afdd8beca2f35bc7e67b21` and is public**
