@@ -213,3 +213,12 @@ Date: 10 September 2026
 - Connected the local working folder to canonical GitHub repository `waterly805/Wortnah`, fetched `origin/main`, and preserved the new `AGENTS.md`, `docs/PROJECT_STATE.md`, `docs/WORKFLOW.md`, and maintainer workflow guidance while reconciling the verified 0.5.1 source.
 - Pushed canonical 0.5.1 implementation commit `9a6c092058450f28ccaf2f60639894543573ae96` to GitHub `main` after the production build, lint, all 30 automated checks, runtime-file comparison and credential-pattern scan passed.
 - Authenticated Werner, device fallback, responsive layout and disposable Admin CRUD checks remain open in the live acceptance checklist. No credential value was read, recorded or requested in chat.
+
+## Batch 37: workspace consolidation
+
+Date: 10 September 2026
+
+- Converted `/Users/DL/Documents/ChatGPT/Wortnah` into the clean local working copy of canonical GitHub `main` and verified that local `HEAD` matches `origin/main`.
+- Added `docs/WORKSPACE-STRUCTURE.md` with the required start-of-work, end-of-work and storage rules.
+- Defined GitHub as the complete technical record, the local folder as the only editable working copy, OneDrive as current documentation plus recovery archives, and Supabase as the live data source.
+- Began organizing the existing OneDrive Wortnah material into current documentation, current and previous release archives, and historical reference folders without deleting historical material.

@@ -4,6 +4,17 @@
 
 Wortnah is a German-first accessible communication web app with optional supported speech practice. It is designed for modern browsers on Android, iPhone/iPad, Windows, macOS, and Linux and can be installed as a Progressive Web App.
 
+## Start here
+
+For current development or release work, read these first:
+
+1. `docs/PROJECT_STATE.md` — live operational source of truth.
+2. `docs/WORKFLOW.md` — required implementation and release workflow.
+3. `AGENTS.md` — repository-level Wortnah guidance.
+4. `docs/WORKSPACE-STRUCTURE.md` — location and synchronization rules for the local working copy, GitHub and OneDrive.
+
+Do not reconstruct current requirements from old chat summaries or dated implementation logs when these current-state files are available.
+
 ## Current application
 
 - Three fixed pilot profiles: Werner, Admin 1, and Admin 2
@@ -13,7 +24,7 @@ Wortnah is a German-first accessible communication web app with optional support
 - Purpose-first guided communication using shared, companion-managed content
 - First-tap listen, second-tap confirm interaction
 - Patient choice layouts from 2 through 12, bounded by the companion maximum
-- German and English interface switching
+- German-only interface for release 0.5.1
 - Approved private MP3 audio first, cached server-side ElevenLabs second, and German device voice fallback
 - Normal, Important, and Very Important priorities
 - Reusable patient message history and read acknowledgement
@@ -24,13 +35,14 @@ Wortnah is a German-first accessible communication web app with optional support
 
 ## Durable project assets
 
-- Recovered editable source and new version history: `https://github.com/waterly805/Wortnah`
+- Canonical source, current technical state, tests, migrations and release history: GitHub `waterly805/Wortnah`
+- Local editable working copy: `/Users/DL/Documents/ChatGPT/Wortnah`
 - Live accounts, permissions, messages, settings, and KPI events: Supabase Frankfurt
-- Product specification, schema copies, source snapshots, and handoff notes: OneDrive `ChatGPT Work Personal/Wortnah`
+- Human-readable documentation and recovery archives: OneDrive `ChatGPT Work Personal/Wortnah`
 
-The current editable application is version 0.5.1. See `docs/IMPLEMENTATION-LOG-2026-09-07.md` and `docs/RELEASE-NOTES-0.5.1.md` for verification and rollout status.
+The current recorded application release is **0.5.1**. See `docs/PROJECT_STATE.md`, `docs/RELEASE-NOTES-0.5.1.md`, and `docs/LIVE-ACCEPTANCE-CHECKLIST-0.5.1.md` for current state and verification requirements.
 
-The OneDrive archive is a recovery and documentation layer. It is not queried by the live app and does not replace Supabase for transactional data.
+GitHub is the canonical technical source of truth. The local repository is its working copy. The OneDrive archive must not become a separate editable codebase. Supabase remains the source for transactional application data.
 
 ## Privacy boundary
 
