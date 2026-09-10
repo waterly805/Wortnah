@@ -221,4 +221,5 @@ Date: 10 September 2026
 - Converted `/Users/DL/Documents/ChatGPT/Wortnah` into the clean local working copy of canonical GitHub `main` and verified that local `HEAD` matches `origin/main`.
 - Added `docs/WORKSPACE-STRUCTURE.md` with the required start-of-work, end-of-work and storage rules.
 - Defined GitHub as the complete technical record, the local folder as the only editable working copy, OneDrive as current documentation plus recovery archives, and Supabase as the live data source.
-- Began organizing the existing OneDrive Wortnah material into current documentation, current and previous release archives, and historical reference folders without deleting historical material.
+- Organized the existing OneDrive Wortnah material into current documentation, current and previous release archives, and historical reference folders without deleting historical material.
+- Added a canonical GitHub archive for implementation commit `9a6c092b00f4eecb8de58fd198baa848f0c91d70`, retained the exact deployed Site source separately, and generated SHA-256 checksums for both current recovery archives.
