@@ -7,12 +7,13 @@ Verified production baseline: 8 September 2026.
 - Repository: `waterly805/Wortnah`
 - Site project: `appgprj_6a9dd4677be8819197f3c3d8488f0aec`
 - Live Site: `https://wortnah-kommunikation.danny-ly-1897.chatgpt.site`
+- Preferred custom hostname: `https://www.wort-nah.com` (pending DNS validation and SSL activation as of 10 September 2026)
 - Supabase project: `dffmqcqidqkbqeorjtlb`
 - Active Werner space: `317579c9-9b2e-42fb-8713-832edbc25556`
 - Private audio bucket: `wortnah-voice-audio`
 - Current functions: `pilot-login`, `wortnah-audio`, and `wortnah-audio-import`
 
-The Site audience was owner-only at the baseline. Check it before claiming that independent devices can open the link. The app-level Werner/Admin login does not replace the Site access gate.
+The Site audience is public as of 10 September 2026. Check it again before future releases. The app-level Werner/Admin login does not replace the Site access gate.
 
 ## Verified baseline
 

@@ -223,3 +223,11 @@ Date: 10 September 2026
 - Defined GitHub as the complete technical record, the local folder as the only editable working copy, OneDrive as current documentation plus recovery archives, and Supabase as the live data source.
 - Organized the existing OneDrive Wortnah material into current documentation, current and previous release archives, and historical reference folders without deleting historical material.
 - Added a canonical GitHub archive for implementation commit `9a6c092b00f4eecb8de58fd198baa848f0c91d70`, retained the exact deployed Site source separately, and generated SHA-256 checksums for both current recovery archives.
+
+## Batch 38: custom domain setup
+
+Date: 10 September 2026
+
+- Registered `www.wort-nah.com` with the existing public Wortnah Site.
+- Confirmed the custom domain is pending GoDaddy DNS validation and SSL initialization; the existing platform URL remains active during setup.
+- Prepared the required GoDaddy CNAME and TXT records without changing unrelated DNS or storing the returned verification values in repository documentation.
