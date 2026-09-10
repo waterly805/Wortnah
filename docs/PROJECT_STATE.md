@@ -4,7 +4,8 @@
 
 Last repository review: 10 September 2026
 Current app release: **0.5.1**
-GitHub baseline before 0.5.1 synchronization: `c847939df324af498945e8ed8fe7bd52e5a0ea2a`
+Canonical 0.5.1 implementation commit: `9a6c092058450f28ccaf2f60639894543573ae96`
+GitHub baseline before synchronization: `c847939df324af498945e8ed8fe7bd52e5a0ea2a`
 Production state recorded: **10 September 2026**
 Exact live deployment: **Sites version 3 succeeded from verified Site source commit `6d5929d80b28497ed6afdd8beca2f35bc7e67b21` and is public**
 
@@ -164,7 +165,7 @@ Add the next agreed feature here using the task format from `docs/WORKFLOW.md` b
 ## 7. Known issues / uncertainties
 
 - The deployed 0.5.1 source is verified, but authenticated live acceptance remains incomplete until a user enters the two login values privately in the browser.
-- GitHub `main` is being reconciled with the already verified and deployed 0.5.1 source; the Git history is authoritative once this synchronization commit is pushed.
+- GitHub `main` contains the verified 0.5.1 implementation. The live Site uses the same runtime files under the separately recorded Site source commit.
 - `package.json` currently reports the starter package version `0.1.0`; app release tracking is handled by Wortnah release documentation. Do not infer the product release from `package.json` alone.
 
 ## 8. Definition of done
