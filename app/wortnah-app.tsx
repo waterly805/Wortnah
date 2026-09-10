@@ -483,6 +483,7 @@ export function WortnahApp() {
   const [customPurposes, setCustomPurposes] = useState<CustomChoice[]>([]);
   const [customTopics, setCustomTopics] = useState<CustomChoice[]>([]);
   const [customDetails, setCustomDetails] = useState<CustomChoice[]>([]);
+  const [loadedChoiceLevels, setLoadedChoiceLevels] = useState<Record<ChoiceLevel, boolean>>({ purpose: false, topic: false, detail: false });
   const [patientChoicesLoading, setPatientChoicesLoading] = useState(false);
   const [practiceItems, setPracticeItems] = useState<PracticeItem[]>([]);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
@@ -524,8 +525,15 @@ export function WortnahApp() {
   const [practiceIndex, setPracticeIndex] = useState(0);
   const lastTrackedScreen = useRef("");
 
-  const getMembership = useCallback(async (userId: string) => {
-    const { data } = await supabase.from("space_members").select("space_id,profile_id,role,label").eq("profile_id", userId).eq("is_active", true).limit(1).maybeSingle();
+  const getMembership = useCallback(async (userId: string, preferredSpaceId?: string | null) => {
+    let query = supabase
+      .from("space_members")
+      .select("space_id,profile_id,role,label")
+      .eq("profile_id", userId)
+      .eq("is_active", true);
+    if (preferredSpaceId) query = query.eq("space_id", preferredSpaceId);
+    else query = query.order("joined_at", { ascending: false });
+    const { data } = await query.limit(1).maybeSingle();
     if (!data) return null;
     return data as Member;
   }, []);
@@ -548,9 +556,18 @@ export function WortnahApp() {
       .limit(120);
     if (purposeKey) query = query.eq("purpose_key", purposeKey);
     if (topicKey) query = query.eq("topic_key", topicKey);
-    const { data } = await query;
+    const { data, error: loadError } = await query;
+    if (loadError) return null;
     return (data ?? []) as CustomChoice[];
   }, [demo, member]);
+
+  const applyPatientChoices = useCallback((level: ChoiceLevel, choices: CustomChoice[] | null) => {
+    if (choices === null) return;
+    if (level === "purpose") setCustomPurposes(choices);
+    else if (level === "topic") setCustomTopics(choices);
+    else setCustomDetails(choices);
+    setLoadedChoiceLevels((current) => ({ ...current, [level]: true }));
+  }, []);
 
   const loadPracticeItems = useCallback(async () => {
     if (!member || demo) return;
@@ -734,18 +751,36 @@ export function WortnahApp() {
 
   useEffect(() => {
     if (!member || demo) return;
-    void loadPatientChoices("purpose").then(setCustomPurposes);
-  }, [demo, loadPatientChoices, member]);
+    void loadPatientChoices("purpose").then((choices) => applyPatientChoices("purpose", choices));
+  }, [applyPatientChoices, demo, loadPatientChoices, member]);
 
   useEffect(() => {
     if (!purpose || !member || demo) return;
-    void loadPatientChoices("topic", purpose.id).then(setCustomTopics).finally(() => setPatientChoicesLoading(false));
-  }, [demo, loadPatientChoices, member, purpose]);
+    void loadPatientChoices("topic", purpose.id).then((choices) => applyPatientChoices("topic", choices)).finally(() => setPatientChoicesLoading(false));
+  }, [applyPatientChoices, demo, loadPatientChoices, member, purpose]);
 
   useEffect(() => {
     if (!purpose || !topic || !member || demo) return;
-    void loadPatientChoices("detail", purpose.id, topic.id).then(setCustomDetails).finally(() => setPatientChoicesLoading(false));
-  }, [demo, loadPatientChoices, member, purpose, topic]);
+    void loadPatientChoices("detail", purpose.id, topic.id).then((choices) => applyPatientChoices("detail", choices)).finally(() => setPatientChoicesLoading(false));
+  }, [applyPatientChoices, demo, loadPatientChoices, member, purpose, topic]);
+
+  useEffect(() => {
+    if (!member || demo) return;
+    const refreshCommunication = () => {
+      void loadPatientChoices("purpose").then((choices) => applyPatientChoices("purpose", choices));
+      if (purpose) void loadPatientChoices("topic", purpose.id).then((choices) => applyPatientChoices("topic", choices));
+      if (purpose && topic) void loadPatientChoices("detail", purpose.id, topic.id).then((choices) => applyPatientChoices("detail", choices));
+      if (role === "companion") {
+        void loadAdminChoices();
+        void loadAdminTaxonomy();
+      }
+    };
+    const channel = supabase
+      .channel(`communication-content-${member.space_id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "communication_custom_choices" }, refreshCommunication)
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [applyPatientChoices, demo, loadAdminChoices, loadAdminTaxonomy, loadPatientChoices, member, purpose, role, topic]);
 
   useEffect(() => {
     if (!member || demo || (view !== "practice" && adminSection !== "practice")) return;
@@ -903,21 +938,21 @@ export function WortnahApp() {
   const currentChoices = useMemo(() => {
     const toChoice = (item: CustomChoice): Choice => ({ id: item.option_key, de: item.label_de, en: item.label_en || item.label_de });
     if (commStep === "purpose") {
-      const known = new Set(purposes.map((item) => item.id));
-      return [...purposes, ...customPurposes.filter((item) => !known.has(item.option_key)).map(toChoice)];
+      if (loadedChoiceLevels.purpose) return customPurposes.map(toChoice);
+      return purposes;
     }
     if (commStep === "topic") {
       if (patientChoicesLoading) return [];
-      if (customTopics.length) return customTopics.map(toChoice);
+      if (loadedChoiceLevels.topic) return customTopics.map(toChoice);
       return topicsByPurpose[purpose?.id ?? "tell"] ?? [];
     }
     if (commStep === "detail") {
       if (patientChoicesLoading) return [];
-      if (customDetails.length) return customDetails.map(toChoice);
+      if (loadedChoiceLevels.detail) return customDetails.map(toChoice);
       return getDetails(purpose?.id ?? "tell", topic?.id ?? "my_day");
     }
     return [];
-  }, [commStep, customDetails, customPurposes, customTopics, patientChoicesLoading, purpose, topic]);
+  }, [commStep, customDetails, customPurposes, customTopics, loadedChoiceLevels, patientChoicesLoading, purpose, topic]);
 
   const currentSearchNodes = useMemo(
     () => childrenOf(searchNodes, searchPath.at(-1)?.option_key ?? null),
@@ -1035,7 +1070,7 @@ export function WortnahApp() {
         setError(t.saveError);
         return;
       }
-      const activeMember = await getMembership(authData.session.user.id);
+      const activeMember = await getMembership(authData.session.user.id, typeof data.space_id === "string" ? data.space_id : null);
       if (!activeMember) {
         setError(t.saveError);
         return;
@@ -1130,8 +1165,8 @@ export function WortnahApp() {
     }
     setSelected(null);
     void logInteraction("choice_confirm", `communicate_${commStep}`, { choice_id: choice.id, purpose_id: purpose?.id ?? null, topic_id: topic?.id ?? null });
-    if (commStep === "purpose") { if (!demo) setPatientChoicesLoading(true); setCustomTopics([]); setPurpose(choice); setCommStep("topic"); }
-    else if (commStep === "topic") { if (!demo) setPatientChoicesLoading(true); setCustomDetails([]); setTopic(choice); setCommStep("detail"); }
+    if (commStep === "purpose") { if (!demo) setPatientChoicesLoading(true); setLoadedChoiceLevels((levels) => ({ ...levels, topic: false, detail: false })); setCustomTopics([]); setCustomDetails([]); setPurpose(choice); setTopic(null); setCommStep("topic"); }
+    else if (commStep === "topic") { if (!demo) setPatientChoicesLoading(true); setLoadedChoiceLevels((levels) => ({ ...levels, detail: false })); setCustomDetails([]); setTopic(choice); setCommStep("detail"); }
     else if (commStep === "detail") { setDetail(choice); setCommStep("review"); speak(choice[lang]); }
   };
 

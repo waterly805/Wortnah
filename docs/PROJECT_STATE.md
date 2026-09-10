@@ -3,7 +3,7 @@
 > **Purpose:** This is the single live operational source of truth for what is currently implemented, verified, in progress, and safe to release. Read this file before substantial Wortnah work and update it before considering that work complete.
 
 Last repository review: 10 September 2026
-Current app release: **0.5.1**; **0.5.2 implementation in progress**
+Current live app release: **0.5.1**; **0.5.3 implementation in progress** (includes the unpublished 0.5.2 interface/audio work)
 Canonical 0.5.1 implementation commit: `9a6c092b00f4eecb8de58fd198baa848f0c91d70`
 GitHub baseline before synchronization: `c847939df324af498945e8ed8fe7bd52e5a0ea2a`
 Production state recorded: **10 September 2026**
@@ -158,6 +158,38 @@ Verification required:
 
 Notes / decisions:
 - Access codes, daily PINs, tokens and temporary credentials must never be written to GitHub, OneDrive, logs or chat.
+
+### FEATURE-002 — One communication source with live Admin-to-Werner synchronization
+
+Status: Implemented and backend-verified; Site deployment and authenticated live check remain
+
+Goal:
+Make Admin and Werner read and update the same communication hierarchy so that field counts, pages, visibility, order, edits and deletions agree immediately.
+
+Acceptance criteria:
+- [x] Pilot login selects the canonical Werner space instead of an arbitrary older active membership.
+- [x] The canonical space contains the six approved level-1 areas plus recovered companion-created entries such as the current `Test` row.
+- [x] Admin levels 1, 2 and 3 use the same stored hierarchy that Werner uses; authenticated live display remains to be checked after deployment.
+- [x] Werner uses stored communication rows when they load successfully; an intentionally empty stored level remains empty instead of silently restoring hard-coded choices.
+- [x] Add, edit, show/hide, move and delete changes trigger refreshes on other signed-in Werner/Admin screens; the two-session live check remains.
+- [x] Focused checks cover canonical-space selection, database-first choices and the live content subscription.
+
+Affected areas:
+- Frontend: Membership selection, communication loading and live refresh.
+- Backend/Supabase: Repair the canonical level-1 catalog and recover companion-created rows from stale pilot spaces.
+- Database/migrations: One idempotent data-repair migration; no new table.
+- Audio: No audio-pipeline change in this batch.
+- Deployment: A new verified Site version and updated `pilot-login` function are required after verification.
+
+Verification required:
+- [x] Focused automated checks; all 41 automated checks pass.
+- [x] Production build, lint and related regressions pass.
+- [ ] Live Admin-to-Werner add/edit/hide/move/delete check with disposable data removed.
+
+Notes / decisions:
+- Preserve the existing calm Wortnah interface. This batch fixes source-of-truth behavior rather than redesigning the screens.
+- Realtime remains protected by the existing row-level membership policy; no public data access is added.
+- The live canonical hierarchy now has 7 visible level-1 rows, 64 visible level-2 rows and 1,024 visible level-3 rows. `pilot-login` version 18 is active.
 
 ### FEATURE-001 — Natural concise reading and simple choice-count control
 

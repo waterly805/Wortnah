@@ -103,7 +103,7 @@ Deno.serve(async (request) => {
     const { data: link, error: linkError } = await admin.auth.admin.generateLink({ type: "magiclink", email: selected.auth_email });
     const tokenHash = link?.properties?.hashed_token;
     if (linkError || !tokenHash) throw linkError ?? new Error("could not create session");
-    return response(request, { token_hash: tokenHash, profile: selected.profile_key });
+    return response(request, { token_hash: tokenHash, profile: selected.profile_key, space_id: selected.space_id });
   } catch (error) {
     console.error("pilot login failed", error instanceof Error ? error.message : "unknown");
     return response(request, { error: "Anmeldung im Moment nicht m\u00f6glich. Bitte erneut versuchen." }, 500);

@@ -247,3 +247,16 @@ Date: 10 September 2026
 - Added the supplied mountain-and-hiker identity as a round visible and installable app logo.
 - Corrected narrow-screen role-card shrinking and macOS GNU timeout detection.
 - Passed lint, the production build, and all 37 automated checks.
+
+## Batch 40: canonical communication hierarchy and live synchronization
+
+Date: 10 September 2026
+
+- Traced the Admin/Werner mismatch to three active historical memberships combined with an unordered one-row membership lookup.
+- Confirmed the main imported vocabulary was in the canonical pilot space while the companion-created `Test` area was in an older space.
+- Updated `pilot-login` to return the canonical space and updated the client to select that exact membership, with newest-membership fallback only for restored sessions.
+- Restored the six approved level-1 areas in the canonical database and recovered the `Test` row without deleting historical data.
+- Changed Werner's communication hierarchy to use successful database results at all levels, including intentionally empty levels after Admin hide/delete changes.
+- Added a protected Realtime subscription that refreshes current Admin and Werner communication data after inserts, updates and deletes.
+- Deployed `pilot-login` version 18 and verified the canonical live hierarchy contains 7 visible areas, 64 visible topics and 1,024 visible phrases.
+- Passed lint, the production build and all 41 automated checks. Site deployment and authenticated two-session live acceptance remain.

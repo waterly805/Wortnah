@@ -3,6 +3,8 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const appSource = await readFile(new URL("../app/wortnah-app.tsx", import.meta.url), "utf8");
+const pilotLoginSource = await readFile(new URL("../supabase/functions/pilot-login/index.ts", import.meta.url), "utf8");
+const communicationSyncMigration = await readFile(new URL("../supabase/migrations/20260910205639_communication_live_sync.sql", import.meta.url), "utf8");
 
 test("a successful profile login still requires the daily PIN", () => {
   const loginStart = appSource.indexOf("const handlePilotLogin");
@@ -105,4 +107,40 @@ test("practice follows the same patient choice count through twelve", () => {
   assert.match(appSource, /practiceItems\.slice\(0, choiceCount\)/);
   assert.match(appSource, /fallbackItems\.slice\(0, choiceCount\)/);
   assert.doesNotMatch(appSource, /practiceItems\.slice\(0, Math\.max\(4, choiceCount\)\)/);
+});
+
+test("pilot login selects the canonical space instead of an arbitrary membership", () => {
+  const membershipStart = appSource.indexOf("const getMembership");
+  const membershipEnd = appSource.indexOf("const loadMessages", membershipStart);
+  const membershipFlow = appSource.slice(membershipStart, membershipEnd);
+  assert.match(membershipFlow, /preferredSpaceId/);
+  assert.match(membershipFlow, /eq\("space_id", preferredSpaceId\)/);
+  assert.match(membershipFlow, /order\("joined_at", \{ ascending: false \}\)/);
+  assert.match(appSource, /getMembership\(authData\.session\.user\.id, typeof data\.space_id === "string"/);
+  assert.match(pilotLoginSource, /space_id: selected\.space_id/);
+});
+
+test("communication choices use successful database results, including an empty level", () => {
+  assert.match(appSource, /loadedChoiceLevels/);
+  assert.match(appSource, /if \(loadedChoiceLevels\.purpose\) return customPurposes\.map\(toChoice\)/);
+  assert.match(appSource, /if \(loadedChoiceLevels\.topic\) return customTopics\.map\(toChoice\)/);
+  assert.match(appSource, /if \(loadedChoiceLevels\.detail\) return customDetails\.map\(toChoice\)/);
+  assert.match(appSource, /if \(loadError\) return null/);
+});
+
+test("communication content refreshes across signed-in Admin and Werner screens", () => {
+  assert.match(appSource, /channel\(`communication-content-\$\{member\.space_id\}`\)/);
+  assert.match(appSource, /"postgres_changes", \{ event: "\*", schema: "public", table: "communication_custom_choices" \}/);
+  assert.match(appSource, /removeChannel\(channel\)/);
+  assert.match(appSource, /loadAdminChoices\(\)/);
+  assert.match(appSource, /loadPatientChoices\("purpose"\)/);
+});
+
+test("the synchronization migration restores the official first level and recovers Admin rows", () => {
+  for (const key of ["reply", "request", "ask", "tell", "express", "opinion"]) {
+    assert.match(communicationSyncMigration, new RegExp(`\\('${key}',`));
+  }
+  assert.match(communicationSyncMigration, /old\.source_name = 'Wortnah Admin'/);
+  assert.match(communicationSyncMigration, /'recovered_' \|\| replace\(recoverable\.id::text/);
+  assert.match(communicationSyncMigration, /on conflict \(option_key\) do nothing/);
 });
