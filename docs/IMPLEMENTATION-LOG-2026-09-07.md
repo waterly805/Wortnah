@@ -273,3 +273,14 @@ Date: 11 September 2026
 - Confirmed both production URLs return HTTP 200 and the anonymous custom-domain page shows Werner, Admin 1 and Admin 2.
 - Confirmed the live document contains `translate="no"` and Google's `notranslate` directive.
 - Authenticated verification through both PIN steps with Chrome translation enabled remains open; no access code or PIN was requested, read or stored.
+
+## Batch 42: hierarchical Admin editor and Wortnah 0.5.4 deployment
+
+Date: 11 September 2026
+
+- Reworked the companion content manager so Level 2 edits one selected Level-1 area and Level 3 edits one selected theme, with a clickable path, branch selectors, contextual Werner preview, local search, counts and level-specific add actions.
+- Preserved add, edit, visibility, ordering and delete controls while making mutations server-confirmed, active-space and branch scoped; blocked unsafe deletion of populated parents and unsafe movement of populated themes.
+- Kept Supabase as the live content source of truth and reinforced Realtime with foreground revalidation, so saved content survives browser close and logout and reaches other signed-in sessions.
+- Passed lint, the bounded production build and all 47 automated checks, including six focused hierarchy and synchronization checks.
+- Pushed exact runtime source commit `3bc744f1eeb07c476daa6398404396bd60eee1a5` to GitHub and the Sites source, packaged Sites version 6 and received terminal deployment status `succeeded`.
+- Confirmed the custom and platform production endpoints return HTTP 200 and serve the new 0.5.4 application bundle. Authenticated disposable Admin-to-Werner CRUD and two-session acceptance remains because the browser requires the private daily PIN.

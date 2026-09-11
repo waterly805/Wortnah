@@ -6,8 +6,9 @@ Use disposable content only and remove it before closing the check. Never record
 
 ## Release
 
-- [ ] Exact verified source commit is deployed successfully to the existing public Site.
-- [ ] `https://www.wort-nah.com` returns HTTP 200 and the anonymous profile page shows Werner, Admin 1 and Admin 2.
+- [x] Exact verified source commit `3bc744f1eeb07c476daa6398404396bd60eee1a5` is deployed successfully as public Sites version 6.
+- [x] `https://www.wort-nah.com` and the platform production URL return HTTP 200 and serve the new 0.5.4 application bundle.
+- [ ] Confirm the anonymous profile page still shows Werner, Admin 1 and Admin 2 in a signed-out browser session.
 
 ## Admin hierarchy
 

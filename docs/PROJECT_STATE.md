@@ -3,13 +3,13 @@
 > **Purpose:** This is the single live operational source of truth for what is currently implemented, verified, in progress, and safe to release. Read this file before substantial Wortnah work and update it before considering that work complete.
 
 Last repository review: 11 September 2026
-Current live app release: **0.5.3 with HOTFIX-001 deployed**
-Canonical live implementation commit: `4c765ae0d065b139895bb5cd85a59b308b3b1fb9`
+Current live app release: **0.5.4 deployed**
+Canonical live implementation commit: `3bc744f1eeb07c476daa6398404396bd60eee1a5`
 Canonical 0.5.3 implementation commit before HOTFIX-001: `9637603b85fb14e40fdd7fb36d5ccccbe01b265f`
 Canonical 0.5.1 implementation commit: `9a6c092b00f4eecb8de58fd198baa848f0c91d70`
 GitHub baseline before synchronization: `c847939df324af498945e8ed8fe7bd52e5a0ea2a`
 Production state recorded: **11 September 2026**
-Exact live deployment: **Sites version 5 succeeded from verified Site source commit `4c765ae0d065b139895bb5cd85a59b308b3b1fb9` and is public**
+Exact live deployment: **Sites version 6 succeeded from verified Site source commit `3bc744f1eeb07c476daa6398404396bd60eee1a5` and is public**
 
 ## 1. Sources of truth
 
@@ -134,7 +134,7 @@ The repository is the canonical development record. A local clone is a working c
 
 ### FEATURE-004 — Hierarchical Admin content editor
 
-Status: Implemented and locally verified; public Site deployment authorized and pending
+Status: Deployed and bundle-verified; authenticated Admin-to-Werner acceptance remains
 
 Goal:
 Let Admin 1 and Admin 2 manage one clearly identified branch of Werner's live communication tree at a time, while preserving the existing add, edit, visibility, ordering and delete controls.
@@ -160,13 +160,14 @@ Verification required:
 - [x] Focused checks cover branch filtering, selected-parent assignment, branch-scoped ordering, safe parent deletion, level-specific copy and live refresh/revalidation.
 - [x] All 47 automated tests, lint and the production build pass.
 - [x] Source structure and responsive rules match the approved Admin-center reference direction; the authenticated rendered desktop and narrow-layout checks remain on the live checklist.
-- [ ] Exact source is pushed, packaged, deployed to the existing public Site and the deployment reaches a terminal success state.
-- [ ] Live anonymous page remains healthy; authenticated Admin-to-Werner CRUD/reorder/visibility persistence still requires a disposable two-session check if credentials are not available in the release session.
+- [x] Exact source commit `3bc744f1eeb07c476daa6398404396bd60eee1a5` was pushed, packaged as Sites version 6 and reached terminal deployment status `succeeded`.
+- [x] Both public production endpoints return HTTP 200 and serve the new 0.5.4 application bundle; authenticated Admin-to-Werner CRUD/reorder/visibility persistence still requires a disposable two-session check.
 
 Notes / decisions:
 - Approved reference: the user-provided `admin center example.png` derived from the reviewed mockup. Preserve the current white/navy Wortnah system and management-list interaction rather than rebuilding the editor.
 - Search is branch-local in this batch. Device storage may remember only the editor location; communication content remains live Supabase data.
 - 11 September local verification: lint, the bounded production build and all 47 automated checks pass. No database migration or backend deployment is required because FEATURE-002 already established the shared Supabase hierarchy and realtime channel.
+- 11 September production verification: Sites version 6 succeeded, the custom and platform URLs return HTTP 200, and the live JavaScript bundle contains the new branch-selector, level-specific add-action and saved-path behavior.
 
 ### HOTFIX-001 — Prevent post-PIN browser-translation crash
 
@@ -382,7 +383,7 @@ Add the next agreed feature here using the task format from `docs/WORKFLOW.md` b
 - The custom hostname previously forced device-voice fallback because private-audio browser requests were blocked at CORS. The deployed function origin repair is verified; authenticated MP3 playback and real-device fallback quality remain on the 0.5.2 live checklist.
 - Concise automatic page reading is implemented and deployed; authenticated live audio and real-device fallback checks remain.
 - The custom hostname is present in the deployed login and private-audio Edge Function allowlists; authenticated login and MP3 playback remain to be accepted live.
-- Sites version 5 runs verified source commit `4c765ae0d065b139895bb5cd85a59b308b3b1fb9`; GitHub `main` contains that runtime source plus the subsequent release-record update.
+- Sites version 6 runs verified source commit `3bc744f1eeb07c476daa6398404396bd60eee1a5`; GitHub `main` contains that runtime source plus the subsequent release-record update.
 - `package.json` currently reports the starter package version `0.1.0`; app release tracking is handled by Wortnah release documentation. Do not infer the product release from `package.json` alone.
 
 ## 8. Definition of done

@@ -20,6 +20,8 @@ This release makes the companion communication editor follow the same live conte
 - Lint and the bounded production build pass.
 - All 47 automated checks pass, including six focused hierarchy and synchronization checks.
 - No Supabase migration or Edge Function change is required; the release reuses the shared live hierarchy established in 0.5.3.
-- Public Sites deployment and authenticated Admin-to-Werner acceptance are pending.
+- Exact source commit `3bc744f1eeb07c476daa6398404396bd60eee1a5` was packaged as Sites version 6 and the public deployment succeeded.
+- Both the custom and platform production URLs return HTTP 200 and serve the new 0.5.4 application bundle.
+- Authenticated Admin-to-Werner CRUD, persistence and two-session synchronization acceptance remains for the next private login session.
 
 Public Site after successful deployment: https://www.wort-nah.com
