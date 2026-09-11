@@ -262,3 +262,14 @@ Date: 10 September 2026
 - Passed lint, the production build and all 41 automated checks.
 - Pushed exact source commit `9637603b85fb14e40fdd7fb36d5ccccbe01b265f` to GitHub and the Sites source, saved Sites version 4, and received terminal deployment status `succeeded` while preserving the public audience and custom hostname.
 - Authenticated two-session live acceptance remains; no access code or PIN was requested, read or stored.
+
+## Batch 41: public HOTFIX-001 deployment
+
+Date: 11 September 2026
+
+- Fast-forwarded the clean local checkout to GitHub `main` at `4c765ae0d065b139895bb5cd85a59b308b3b1fb9` and re-ran the production build, lint and all 41 automated checks successfully.
+- Restored the Site audience from an unintended custom gate to public while preserving the existing owner and editor.
+- Pushed the exact verified source to the existing Sites repository, packaged the successful build, saved Sites version 5 and received terminal deployment status `succeeded`.
+- Confirmed both production URLs return HTTP 200 and the anonymous custom-domain page shows Werner, Admin 1 and Admin 2.
+- Confirmed the live document contains `translate="no"` and Google's `notranslate` directive.
+- Authenticated verification through both PIN steps with Chrome translation enabled remains open; no access code or PIN was requested, read or stored.

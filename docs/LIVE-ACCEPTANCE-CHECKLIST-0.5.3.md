@@ -1,6 +1,6 @@
 # Wortnah 0.5.3 live acceptance checklist
 
-Date: 10 September 2026
+Date: 11 September 2026
 
 ## Automated and backend gate
 
@@ -13,7 +13,9 @@ Date: 10 September 2026
 
 ## Public and signed-in browser checks
 
-- [x] The exact verified source is deployed successfully as Sites version 4 and the Site remains public.
+- [x] The exact verified source is deployed successfully as Sites version 5 and the Site remains public.
+- [x] The live document contains `translate="no"` and Google's `notranslate` directive, and the anonymous profile-selection screen renders normally.
+- [ ] With Chrome translation enabled, complete both login steps and confirm the post-PIN screen does not crash or turn white.
 - [ ] Werner sees the six approved areas and the recovered `Test` area.
 - [ ] Changing from 4 to 8 fields reveals additional areas and shows correct page controls when more rows exist than visible fields.
 - [ ] Admin levels 1, 2 and 3 show the same stored hierarchy used by Werner.

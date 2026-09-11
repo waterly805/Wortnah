@@ -1,6 +1,6 @@
 # Wortnah system and release map
 
-Verified production baseline: 8 September 2026.
+Verified production baseline: 11 September 2026.
 
 ## Current services
 
@@ -13,12 +13,12 @@ Verified production baseline: 8 September 2026.
 - Private audio bucket: `wortnah-voice-audio`
 - Current functions: `pilot-login`, `wortnah-audio`, and `wortnah-audio-import`
 
-The Site audience is public as of 10 September 2026. Check it again before future releases. The app-level Werner/Admin login does not replace the Site access gate.
+The Site audience is public as of 11 September 2026. Check it again before future releases. The app-level Werner/Admin login does not replace the Site access gate.
 
 ## Verified baseline
 
-- Site version 1 is deployed successfully.
-- `pilot-login` version 15 is active and performs custom authentication before issuing the login token.
+- Site version 5 is deployed successfully from GitHub/Sites source commit `4c765ae0d065b139895bb5cd85a59b308b3b1fb9` and the audience is public.
+- `pilot-login` version 18 is active, performs custom authentication and returns the canonical Werner space before issuing the login token.
 - Choice limits accept exactly 2/4/6/8/10/12.
 - Admin 1 and Admin 2 labels are aligned across access profiles, profiles, and memberships.
 - 180 tier-zero reviewed audio registry rows exist in the active Werner space.

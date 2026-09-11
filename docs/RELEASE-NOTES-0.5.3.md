@@ -1,6 +1,6 @@
 # Wortnah 0.5.3
 
-Date: 10 September 2026
+Date: 11 September 2026
 
 This release makes Communication use one canonical Admin-managed hierarchy for Werner and both companion profiles.
 
@@ -18,7 +18,10 @@ This release makes Communication use one canonical Admin-managed hierarchy for W
 - `pilot-login` version 18 is active and returns the canonical space with the login handoff.
 - Lint and the production build pass.
 - All 41 automated checks pass.
-- Sites version 4 deployed successfully from the exact verified implementation commit and remains public at the custom hostname.
+- Sites version 5 deployed successfully from exact verified commit `4c765ae0d065b139895bb5cd85a59b308b3b1fb9` and remains public at the custom hostname.
+- The live document opts out of browser translation with both the standard HTML attribute and Google's `notranslate` directive, preventing Chrome translation from mutating React-owned login elements.
+- Both the custom and platform production URLs return HTTP 200, and the anonymous profile-selection page renders Werner, Admin 1 and Admin 2.
 - An authenticated two-session Admin-to-Werner check remains before full live acceptance.
+- An authenticated Chrome-translation check through both PIN steps remains before the post-PIN crash repair is fully live-accepted.
 
 Public Site: https://www.wort-nah.com

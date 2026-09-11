@@ -2,13 +2,14 @@
 
 > **Purpose:** This is the single live operational source of truth for what is currently implemented, verified, in progress, and safe to release. Read this file before substantial Wortnah work and update it before considering that work complete.
 
-Last repository review: 10 September 2026
-Current live app release: **0.5.3**
-Canonical 0.5.3 implementation commit: `9637603b85fb14e40fdd7fb36d5ccccbe01b265f`
+Last repository review: 11 September 2026
+Current live app release: **0.5.3 with HOTFIX-001 deployed**
+Canonical live implementation commit: `4c765ae0d065b139895bb5cd85a59b308b3b1fb9`
+Canonical 0.5.3 implementation commit before HOTFIX-001: `9637603b85fb14e40fdd7fb36d5ccccbe01b265f`
 Canonical 0.5.1 implementation commit: `9a6c092b00f4eecb8de58fd198baa848f0c91d70`
 GitHub baseline before synchronization: `c847939df324af498945e8ed8fe7bd52e5a0ea2a`
-Production state recorded: **10 September 2026**
-Exact live deployment: **Sites version 4 succeeded from verified Site source commit `9637603b85fb14e40fdd7fb36d5ccccbe01b265f` and is public**
+Production state recorded: **11 September 2026**
+Exact live deployment: **Sites version 5 succeeded from verified Site source commit `4c765ae0d065b139895bb5cd85a59b308b3b1fb9` and is public**
 
 ## 1. Sources of truth
 
@@ -59,7 +60,7 @@ Playback order:
 
 Never place PINs, access codes, Supabase secrets, ElevenLabs keys, session tokens or temporary Site credentials in source, documentation, logs or chat output.
 
-## 3. Current implemented release: 0.5.1
+## 3. Stable product baseline carried forward from 0.5.1
 
 According to the 0.5.1 release record:
 
@@ -133,7 +134,7 @@ The repository is the canonical development record. A local clone is a working c
 
 ### HOTFIX-001 — Prevent post-PIN browser-translation crash
 
-Status: Implemented and locally verified; production deployment pending
+Status: Deployed and anonymously verified; authenticated post-PIN Chrome check remains
 
 Goal:
 Keep Wortnah stable when Chrome translation is enabled so completing the daily PIN never leaves a white screen.
@@ -142,7 +143,8 @@ Acceptance criteria:
 - [x] The German document explicitly opts out of automatic browser translation at the root.
 - [x] The rendered production HTML contains both the standard `translate="no"` attribute and Google's `notranslate` directive.
 - [x] Production build, focused rendered-HTML check and full automated tests pass.
-- [ ] The fix is deployed to the existing public Site and the login screen renders without the observed React `removeChild` crash.
+- [x] The fix is deployed to the existing public Site and the anonymous login screen renders normally.
+- [ ] With Chrome translation enabled, completing both PIN steps does not reproduce the observed React `removeChild` crash.
 
 Affected areas:
 - Frontend: Root document metadata only.
@@ -154,11 +156,14 @@ Affected areas:
 Verification required:
 - [x] Reproduce and record the browser error.
 - [x] Focused automated check and related regressions.
-- [ ] Production deployment and live browser check.
+- [x] Production deployment, public access and anonymous live browser check.
+- [ ] Authenticated Chrome-translation check through both PIN steps.
 
 Notes / decisions:
 - 11 September reproduction: Chrome had translated Wortnah's German PIN screen into English. After PIN completion, React failed with `NotFoundError: removeChild` because the translation layer had changed React-owned DOM nodes.
 - Keep the existing UI unchanged; prevent translation mutation rather than altering authentication or Supabase.
+- 11 September release: public access was restored without removing the existing owner/editor, and Sites version 5 deployed successfully from commit `4c765ae0d065b139895bb5cd85a59b308b3b1fb9`.
+- Both production URLs return HTTP 200, the anonymous page shows Werner, Admin 1 and Admin 2, and the live document contains `translate="no"` plus Google's `notranslate` directive.
 
 ### FEATURE-003 — Priority email alerts with Admin recipients
 
@@ -339,9 +344,9 @@ Add the next agreed feature here using the task format from `docs/WORKFLOW.md` b
 
 - The deployed 0.5.1 source is verified, but authenticated live acceptance remains incomplete until a user enters the two login values privately in the browser.
 - The custom hostname previously forced device-voice fallback because private-audio browser requests were blocked at CORS. The deployed function origin repair is verified; authenticated MP3 playback and real-device fallback quality remain on the 0.5.2 live checklist.
-- Current automatic page reading is reported to include secondary instructions and controls instead of only the main prompt and visible choice labels.
-- Login and private audio are blocked from the new custom hostname because the deployed Edge Function origin allowlists contain only the earlier Site hostnames.
-- GitHub `main` contains the verified 0.5.1 implementation. The live Site uses the same runtime files under the separately recorded Site source commit.
+- Concise automatic page reading is implemented and deployed; authenticated live audio and real-device fallback checks remain.
+- The custom hostname is present in the deployed login and private-audio Edge Function allowlists; authenticated login and MP3 playback remain to be accepted live.
+- Sites version 5 runs verified source commit `4c765ae0d065b139895bb5cd85a59b308b3b1fb9`; GitHub `main` contains that runtime source plus the subsequent release-record update.
 - `package.json` currently reports the starter package version `0.1.0`; app release tracking is handled by Wortnah release documentation. Do not infer the product release from `package.json` alone.
 
 ## 8. Definition of done
