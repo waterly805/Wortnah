@@ -284,3 +284,12 @@ Date: 11 September 2026
 - Passed lint, the bounded production build and all 47 automated checks, including six focused hierarchy and synchronization checks.
 - Pushed exact runtime source commit `3bc744f1eeb07c476daa6398404396bd60eee1a5` to GitHub and the Sites source, packaged Sites version 6 and received terminal deployment status `succeeded`.
 - Confirmed the custom and platform production endpoints return HTTP 200 and serve the new 0.5.4 application bundle. Authenticated disposable Admin-to-Werner CRUD and two-session acceptance remains because the browser requires the private daily PIN.
+
+## Batch 43: Wortnah 0.5.5 requirement freeze
+
+Date: 11 September 2026
+
+- Approved a four-stage 0.5.5 scope: 30-day message inbox, priority email alerts, actionable Admin overview and privacy-safe improvement insights.
+- Fixed retention at 30 days for message/receipt/delivery content, 90 days for detailed privacy-safe events and 12 months for anonymous daily aggregates, with a mandatory Supabase size and projected-growth check before analytics deployment.
+- Excluded historical old-space message recovery/deletion, AI-generated recommendations, patient profiling and clinical scoring.
+- Saved the ten-checkpoint implementation order and a release-specific live acceptance checklist. No application, Supabase or production Site change was made in this checkpoint.

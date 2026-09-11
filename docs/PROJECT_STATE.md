@@ -132,6 +132,44 @@ The repository is the canonical development record. A local clone is a working c
 
 ### In progress
 
+### RELEASE-0.5.5 — Admin inbox, priority email, actionable overview and improvement insights
+
+Status: In progress — checkpoint 1 requirement freeze complete; checkpoint 2 production/storage audit next
+
+Goal:
+Give Admin 1 and Admin 2 a simple 30-day message inbox, reliable priority email, an actionable overview and privacy-safe evidence for improving Wortnah content and reliability.
+
+Acceptance criteria:
+- [ ] The active-space inbox shows up to 30 days of messages with unambiguous saved/read/email states, search, sorting, filters and confirmed individual/bulk deletion.
+- [ ] Messages, receipts and Wortnah delivery records are automatically purged after 30 days; old-space messages are neither imported nor deleted in this release.
+- [ ] Normal messages never email; important and very-important messages save first and then send only to enabled consented recipients with duplicate-safe delivery.
+- [ ] Admin 1 and Admin 2 can manage up to three recipients and send a privacy-safe test; Werner cannot access recipient data and sender credentials remain server-only.
+- [ ] The overview removes AI cost and static profile panels, makes all four summary cards actionable and shows newest messages, latest activity and a consistent seven-day chart.
+- [ ] Privacy-safe structured signals identify missing content, configured-search failures, backtracking, branch coverage, audio outcomes, practice outcomes and email delivery outcomes without storing prohibited private text or secrets.
+- [ ] Explainable rule-based recommendations require sufficient evidence, show their counts, open the relevant content branch and never change content automatically.
+- [ ] Detailed privacy-safe events expire after 90 days and anonymous daily aggregates after 12 months, subject to a documented Supabase storage measurement before deployment.
+
+Affected areas:
+- Frontend: Admin overview, message inbox, email recipient/settings and delivery status, activity filters and content-improvement links.
+- Backend/Supabase: Message/receipt retention, email recipient/delivery reconciliation, protected cleanup, privacy-safe analytics and aggregates.
+- Database/migrations: Idempotent migration required after live schema and storage audit.
+- Audio: Outcome instrumentation only; preserve the existing reviewed MP3, generated cache and device fallback order.
+- Deployment: Supabase migration/function deployment plus one exact verified public Sites release.
+
+Verification required:
+- [x] Approved scope, retention rules, visual direction, ten checkpoints and live acceptance criteria are saved in `docs/IMPLEMENTATION-PLAN-0.5.5-2026-09-11.md` and `docs/LIVE-ACCEPTANCE-CHECKLIST-0.5.5.md`.
+- [ ] Live current-space schema, RLS, function revision, data volume and Supabase storage are audited without exposing protected values.
+- [ ] Focused tests cover retention, authorization, priority gating, duplicate prevention, failure independence, overview navigation, analytics privacy and recommendation thresholds.
+- [ ] Production build, lint and related regressions pass.
+- [ ] Migration/function and Site deployments reach verified terminal success and the authenticated live checklist passes.
+
+Notes / decisions:
+- Work proceeds through the ten checkpoints in the implementation plan; checkpoint 2 is next.
+- Message/receipt/delivery content retention is 30 days. Detailed privacy-safe events are retained for 90 days and anonymous daily totals for 12 months, but analytics schema work may be reduced after the required Supabase size/growth review.
+- Historical messages from prior spaces are not needed for this release and will not be recovered, imported or deleted.
+- No AI service is used for recommendation logic, email formatting/sending or patient profiling.
+- Approved visual reference: the interactive overview/inbox mockup reviewed on 11 September 2026.
+
 ### FEATURE-004 — Hierarchical Admin content editor
 
 Status: Deployed and bundle-verified; authenticated Admin-to-Werner acceptance remains
@@ -204,7 +242,7 @@ Notes / decisions:
 
 ### FEATURE-003 — Priority email alerts with Admin recipients
 
-Status: Planned — deferred to the next work session to conserve the remaining weekly allowance
+Status: Approved — included as Stage 2 of RELEASE-0.5.5; production/storage audit is next
 
 Goal:
 Send a private, traceable Gmail alert when Werner confirms an important or very important message, using up to three recipients managed by Admin 1 or Admin 2.
@@ -375,7 +413,7 @@ Notes / decisions:
 
 ### Next approved work
 
-Add the next agreed feature here using the task format from `docs/WORKFLOW.md` before implementation.
+Execute checkpoint 2 of `docs/IMPLEMENTATION-PLAN-0.5.5-2026-09-11.md`: audit the live current-space message/email schema, RLS, Edge Function behavior, record volume and Supabase storage before writing a migration.
 
 ## 7. Known issues / uncertainties
 

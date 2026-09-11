@@ -11,19 +11,20 @@ Verified production baseline: 11 September 2026.
 - Supabase project: `dffmqcqidqkbqeorjtlb`
 - Active Werner space: `317579c9-9b2e-42fb-8713-832edbc25556`
 - Private audio bucket: `wortnah-voice-audio`
-- Current functions: `pilot-login`, `wortnah-audio`, and `wortnah-audio-import`
+- Current canonical functions: `pilot-login`, `wortnah-audio`, and `wortnah-audio-import`
+- Live preflight also identified `send-message-email-alerts` version 14; its canonical repository source and current production behavior must be reconciled in Wortnah 0.5.5 checkpoint 2 before modification.
 
 The Site audience is public as of 11 September 2026. Check it again before future releases. The app-level Werner/Admin login does not replace the Site access gate.
 
 ## Verified baseline
 
-- Site version 5 is deployed successfully from GitHub/Sites source commit `4c765ae0d065b139895bb5cd85a59b308b3b1fb9` and the audience is public.
+- Site version 6 is deployed successfully from GitHub/Sites source commit `3bc744f1eeb07c476daa6398404396bd60eee1a5` and the audience is public.
 - `pilot-login` version 18 is active, performs custom authentication and returns the canonical Werner space before issuing the login token.
 - Choice limits accept exactly 2/4/6/8/10/12.
 - Admin 1 and Admin 2 labels are aligned across access profiles, profiles, and memberships.
 - 180 tier-zero reviewed audio registry rows exist in the active Werner space.
 - Those 180 rows have 180 matching private storage objects and zero missing paths.
-- The production build and 17 focused authentication, patient-flow, choice, audio, and rendered-page checks pass.
+- The production build, lint and all 47 automated checks pass for the deployed 0.5.4 runtime source.
 
 An earlier failed import stored an unused copy under an older space. Do not use total bucket object count as the active-pack count. Remove old-space files only after confirming no active profile or registry references that space.
 
@@ -32,7 +33,8 @@ An earlier failed import stored an unused copy under an older space. Do not use 
 - Working source: `/Users/DL/Documents/ChatGPT/Wortnah`
 - Durable project documentation: `/Users/DL/Library/CloudStorage/OneDrive-Personal/ChatGPT Work Personal/Wortnah`
 - Current implementation log: `docs/IMPLEMENTATION-LOG-2026-09-07.md`
-- Current acceptance checklist: `docs/LIVE-ACCEPTANCE-CHECKLIST-0.4.0.md`
+- Current deployed-release checklist: `docs/LIVE-ACCEPTANCE-CHECKLIST-0.5.4.md`
+- Active planned-release checklist: `docs/LIVE-ACCEPTANCE-CHECKLIST-0.5.5.md`
 - Audio manifest: `audio-import/wortnah-audio-intake-manifest.json`
 
 ## Release checks
