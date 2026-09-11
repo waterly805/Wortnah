@@ -131,6 +131,35 @@ The repository is the canonical development record. A local clone is a working c
 
 ### In progress
 
+### HOTFIX-001 — Prevent post-PIN browser-translation crash
+
+Status: Implemented and locally verified; production deployment pending
+
+Goal:
+Keep Wortnah stable when Chrome translation is enabled so completing the daily PIN never leaves a white screen.
+
+Acceptance criteria:
+- [x] The German document explicitly opts out of automatic browser translation at the root.
+- [x] The rendered production HTML contains both the standard `translate="no"` attribute and Google's `notranslate` directive.
+- [x] Production build, focused rendered-HTML check and full automated tests pass.
+- [ ] The fix is deployed to the existing public Site and the login screen renders without the observed React `removeChild` crash.
+
+Affected areas:
+- Frontend: Root document metadata only.
+- Backend/Supabase: No change.
+- Database/migrations: No change.
+- Audio: No change.
+- Deployment: One minimal Sites hotfix release.
+
+Verification required:
+- [x] Reproduce and record the browser error.
+- [x] Focused automated check and related regressions.
+- [ ] Production deployment and live browser check.
+
+Notes / decisions:
+- 11 September reproduction: Chrome had translated Wortnah's German PIN screen into English. After PIN completion, React failed with `NotFoundError: removeChild` because the translation layer had changed React-owned DOM nodes.
+- Keep the existing UI unchanged; prevent translation mutation rather than altering authentication or Supabase.
+
 ### FEATURE-003 — Priority email alerts with Admin recipients
 
 Status: Planned — deferred to the next work session to conserve the remaining weekly allowance

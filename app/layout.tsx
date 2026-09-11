@@ -25,8 +25,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de">
+    <html lang="de" translate="no" className="notranslate">
       <head>
+        <meta name="google" content="notranslate" />
         <meta name="codex-preview" content="development" />
       </head>
       <body className="antialiased">{children}</body>
