@@ -134,7 +134,7 @@ The repository is the canonical development record. A local clone is a working c
 
 ### RELEASE-0.5.5 — Admin inbox, priority email, actionable overview and improvement insights
 
-Status: In progress — checkpoint 1 requirement freeze complete; checkpoint 2 production/storage audit next
+Status: In progress — checkpoints 1–2 complete; checkpoint 3 database-source reconciliation next
 
 Goal:
 Give Admin 1 and Admin 2 a simple 30-day message inbox, reliable priority email, an actionable overview and privacy-safe evidence for improving Wortnah content and reliability.
@@ -158,17 +158,21 @@ Affected areas:
 
 Verification required:
 - [x] Approved scope, retention rules, visual direction, ten checkpoints and live acceptance criteria are saved in `docs/IMPLEMENTATION-PLAN-0.5.5-2026-09-11.md` and `docs/LIVE-ACCEPTANCE-CHECKLIST-0.5.5.md`.
-- [ ] Live current-space schema, RLS, function revision, data volume and Supabase storage are audited without exposing protected values.
+- [x] Live current-space schema, RLS, function revision, data volume and Supabase storage are audited without exposing protected values; see `docs/AUDIT-0.5.5-CHECKPOINT-2-2026-09-11.md`.
 - [ ] Focused tests cover retention, authorization, priority gating, duplicate prevention, failure independence, overview navigation, analytics privacy and recommendation thresholds.
 - [ ] Production build, lint and related regressions pass.
 - [ ] Migration/function and Site deployments reach verified terminal success and the authenticated live checklist passes.
 
 Notes / decisions:
-- Work proceeds through the ten checkpoints in the implementation plan; checkpoint 2 is next.
+- Work proceeds through the ten checkpoints in the implementation plan; checkpoint 3 is next.
 - Message/receipt/delivery content retention is 30 days. Detailed privacy-safe events are retained for 90 days and anonymous daily totals for 12 months, but analytics schema work may be reduced after the required Supabase size/growth review.
 - Historical messages from prior spaces are not needed for this release and will not be recovered, imported or deleted.
 - No AI service is used for recommendation logic, email formatting/sending or patient profiling.
 - Approved visual reference: the interactive overview/inbox mockup reviewed on 11 September 2026.
+- Checkpoint-2 audit: the database is approximately 20 MB; the active space has 1 current message, 1 receipt, no recipient and no delivery row. Twenty-five older messages and the only configured recipient remain in a legacy space and are left unchanged.
+- The existing daily retention archives messages at 90 days and purges only manually trashed messages after 30 days; it does not satisfy the approved automatic 30-day message/receipt/delivery purge.
+- Persistent Gmail secret names exist server-side, but the deployed version-14 function logged repeated forwarding failures on 5–6 September, is not called by the current app, permits normal-priority forwarding, uses obsolete origins/content and has no active-space recipient. No test email was sent during the audit.
+- Option B remains approved with a privacy-safe subject, immutable German path, exact message, timestamp, priority, respectful conversation guidance and the current public link; the very-important variant requests prompt review.
 
 ### FEATURE-004 — Hierarchical Admin content editor
 
@@ -242,7 +246,7 @@ Notes / decisions:
 
 ### FEATURE-003 — Priority email alerts with Admin recipients
 
-Status: Approved — included as Stage 2 of RELEASE-0.5.5; production/storage audit is next
+Status: Approved — included as Stage 2 of RELEASE-0.5.5; production/storage audit complete and source reconciliation next
 
 Goal:
 Send a private, traceable Gmail alert when Werner confirms an important or very important message, using up to three recipients managed by Admin 1 or Admin 2.
@@ -275,7 +279,7 @@ Notes / decisions:
 - Gmail 2-Step Verification and its App Password belong to the sending Google account; Supabase account MFA is a separate administrator-security setting and is not part of Werner's patient flow.
 - Gmail sender credentials remain only in Supabase Edge Function secrets. Recipient addresses are companion-only protected data.
 - Reference lock: preserve the current white/navy Wortnah system; use description-left/control-right settings rows, compact channel/status chips and a simple delivery list based on the reviewed Sunsama, Mercury and Zapier patterns.
-- 11 September preflight: the live backend already has `email_notification_recipients`, `email_notification_deliveries` and active `send-message-email-alerts` version 14, but their canonical migration/function source is missing from this repository. The live function still permits normal-priority forwarding and only accepts an obsolete Site origin, so it must be reconciled rather than extended blindly.
+- 11 September checkpoint-2 audit: the live backend already has `email_notification_recipients`, `email_notification_deliveries` and active `send-message-email-alerts` version 14, but their canonical migration/function source is missing from this repository. The live function still permits normal-priority forwarding, only accepts an obsolete Site origin, is disconnected from the application and logged repeated forwarding failures on 5–6 September, so it must be replaced from reviewed repository source rather than extended blindly.
 - Next implementation order: reconcile the live schema into an idempotent repository migration; add an immutable German navigation-path snapshot to messages; add the canonical Edge Function source with strict important/very-important gating and Option B copy; add Admin recipient/test/delivery UI; add focused tests; then migrate, deploy, build, publish and run one consented test email.
 
 ### RELEASE-0.5.1 — Authenticated live acceptance

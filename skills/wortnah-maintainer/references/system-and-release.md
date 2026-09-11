@@ -12,7 +12,7 @@ Verified production baseline: 11 September 2026.
 - Active Werner space: `317579c9-9b2e-42fb-8713-832edbc25556`
 - Private audio bucket: `wortnah-voice-audio`
 - Current canonical functions: `pilot-login`, `wortnah-audio`, and `wortnah-audio-import`
-- Live preflight also identified `send-message-email-alerts` version 14; its canonical repository source and current production behavior must be reconciled in Wortnah 0.5.5 checkpoint 2 before modification.
+- `send-message-email-alerts` version 14 remains deployed, but the completed 0.5.5 checkpoint-2 audit found that its source is absent from the repository, it permits normal-priority forwarding, uses an obsolete origin/link, is disconnected from the current client and logged repeated forwarding failures. Replace it from reviewed canonical source in checkpoint 6; do not invoke it unchanged.
 
 The Site audience is public as of 11 September 2026. Check it again before future releases. The app-level Werner/Admin login does not replace the Site access gate.
 
@@ -25,6 +25,9 @@ The Site audience is public as of 11 September 2026. Check it again before futur
 - 180 tier-zero reviewed audio registry rows exist in the active Werner space.
 - Those 180 rows have 180 matching private storage objects and zero missing paths.
 - The production build, lint and all 47 automated checks pass for the deployed 0.5.4 runtime source.
+- The 0.5.5 checkpoint-2 read-only audit measured the database at approximately 20 MB. The canonical active space has one current message and receipt and no email recipient/delivery rows; 25 historical messages and the only configured recipient remain in a legacy space and are outside the 0.5.5 import/delete scope.
+- Gmail sender credential names are present as Supabase server-side secrets, so recurring delivery must not require browser login. This is configuration evidence only: version-14 logs show forwarding failures and no live delivery row proves successful SMTP delivery.
+- The daily `private.apply_retention()` cron runs at 02:30 but currently archives ordinary messages at 90 days and purges only manually trashed messages after 30 days. The approved automatic 30-day message/receipt/delivery contract still requires checkpoint-3 migration work.
 
 An earlier failed import stored an unused copy under an older space. Do not use total bucket object count as the active-pack count. Remove old-space files only after confirming no active profile or registry references that space.
 

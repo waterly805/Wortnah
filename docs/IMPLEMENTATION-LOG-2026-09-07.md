@@ -293,3 +293,13 @@ Date: 11 September 2026
 - Fixed retention at 30 days for message/receipt/delivery content, 90 days for detailed privacy-safe events and 12 months for anonymous daily aggregates, with a mandatory Supabase size and projected-growth check before analytics deployment.
 - Excluded historical old-space message recovery/deletion, AI-generated recommendations, patient profiling and clinical scoring.
 - Saved the ten-checkpoint implementation order and a release-specific live acceptance checklist. No application, Supabase or production Site change was made in this checkpoint.
+
+## Batch 44: Wortnah 0.5.5 production and email audit
+
+Date: 11 September 2026
+
+- Completed a read-only audit of the active and legacy message spaces, table sizes, schemas, indexes, foreign keys, RLS, retention function, cron schedule, Edge Function revision and Gmail connection state.
+- Confirmed the database is approximately 20 MB. The active space contains one current message and receipt with no recipient or delivery rows; 25 older messages and the sole configured recipient remain in a legacy space and were not changed.
+- Found that the daily retention job archives messages after 90 days and purges only manually trashed messages after 30 days, so checkpoint 3 must implement the approved automatic 30-day message/receipt/delivery cleanup.
+- Confirmed persistent Gmail sender secret names exist only in Supabase, while the deployed version-14 email function is disconnected from the app, permits normal-priority forwarding, allows only an obsolete Site origin and logged repeated forwarding failures on 5–6 September.
+- Reconfirmed the Option B content contract and the immutable-path requirement. No secret value was read, no migration or deployment was performed, and no email was sent.
