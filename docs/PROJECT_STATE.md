@@ -132,6 +132,42 @@ The repository is the canonical development record. A local clone is a working c
 
 ### In progress
 
+### FEATURE-004 — Hierarchical Admin content editor
+
+Status: Implemented and locally verified; public Site deployment authorized and pending
+
+Goal:
+Let Admin 1 and Admin 2 manage one clearly identified branch of Werner's live communication tree at a time, while preserving the existing add, edit, visibility, ordering and delete controls.
+
+Acceptance criteria:
+- [x] Level 2 requires a selected Level-1 area and lists only the themes stored under that area.
+- [x] Level 3 shows the selected Level-1 area and Level-2 theme and lists only the words and sentences stored under that theme.
+- [x] The breadcrumb, branch selector, counts, Werner preview, search placeholder and add action all describe the active level and branch in plain German.
+- [x] Opening a Level-2 theme moves directly into its Level-3 contents; the last useful editor location is remembered as a device-local interface preference only.
+- [x] Add and edit writes use the selected live Supabase parent; visibility, ordering and deletion remain server-confirmed and scoped to the active Wortnah space and selected branch.
+- [x] A parent containing child content cannot be silently deleted.
+- [x] Supabase remains the content source of truth; realtime updates plus focus revalidation keep signed-in Admin and Werner sessions from remaining stale, and all saved changes survive logout, browser close and later login.
+- [x] Keyboard and touch semantics plus responsive phone, tablet and desktop layout rules are implemented, with up/down ordering controls retained; authenticated live device checks remain.
+
+Affected areas:
+- Frontend: Companion communication content manager, contextual preview, branch selectors, breadcrumbs, feedback and responsive layout.
+- Backend/Supabase: Reuse the existing `communication_custom_choices` table, space-scoped mutations and realtime channel; no schema change planned.
+- Database/migrations: None expected.
+- Audio: No change.
+- Deployment: New verified public Sites version after source, build and behavior gates pass.
+
+Verification required:
+- [x] Focused checks cover branch filtering, selected-parent assignment, branch-scoped ordering, safe parent deletion, level-specific copy and live refresh/revalidation.
+- [x] All 47 automated tests, lint and the production build pass.
+- [x] Source structure and responsive rules match the approved Admin-center reference direction; the authenticated rendered desktop and narrow-layout checks remain on the live checklist.
+- [ ] Exact source is pushed, packaged, deployed to the existing public Site and the deployment reaches a terminal success state.
+- [ ] Live anonymous page remains healthy; authenticated Admin-to-Werner CRUD/reorder/visibility persistence still requires a disposable two-session check if credentials are not available in the release session.
+
+Notes / decisions:
+- Approved reference: the user-provided `admin center example.png` derived from the reviewed mockup. Preserve the current white/navy Wortnah system and management-list interaction rather than rebuilding the editor.
+- Search is branch-local in this batch. Device storage may remember only the editor location; communication content remains live Supabase data.
+- 11 September local verification: lint, the bounded production build and all 47 automated checks pass. No database migration or backend deployment is required because FEATURE-002 already established the shared Supabase hierarchy and realtime channel.
+
 ### HOTFIX-001 — Prevent post-PIN browser-translation crash
 
 Status: Deployed and anonymously verified; authenticated post-PIN Chrome check remains

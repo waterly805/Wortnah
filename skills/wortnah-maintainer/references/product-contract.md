@@ -20,6 +20,8 @@
 
 - Provide overview, communication/search content management, practice management, activity, messages, and settings.
 - Companions can add, edit, show, hide, search, and delete appropriate content.
+- The communication editor exposes the stored hierarchy one branch at a time: Level 2 is scoped to one selected Level-1 area, and Level 3 is scoped to one selected Level-2 theme with the full location visible.
+- Communication changes are confirmed by the shared Supabase source before success is shown; realtime updates and foreground revalidation keep signed-in Admin and Werner screens aligned.
 - Activity records support care and troubleshooting without exposing message text, search text, PINs, credentials, or audio data.
 - Companions control the maximum visible patient choice count.
 

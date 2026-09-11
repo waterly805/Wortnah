@@ -20,6 +20,7 @@ import {
   House,
   Eye,
   EyeOff,
+  FolderOpen,
   GripVertical,
   Layers3,
   LockKeyhole,
@@ -70,6 +71,24 @@ type VoicePreference = "auto" | "female" | "male";
 type AdminSection = "overview" | "content" | "practice" | "activity" | "settings";
 type ChoiceLevel = "purpose" | "topic" | "detail";
 type ContentArea = "communication" | "search";
+type AdminContentPath = { level: ChoiceLevel; purposeKey: string; topicKey: string };
+
+const adminContentPathStorageKey = "wortnah:admin-content-path";
+
+function storedAdminContentPath(): AdminContentPath | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(adminContentPathStorageKey) ?? "null") as Partial<AdminContentPath> | null;
+    if (!stored || !["purpose", "topic", "detail"].includes(stored.level ?? "")) return null;
+    return {
+      level: stored.level as ChoiceLevel,
+      purposeKey: typeof stored.purposeKey === "string" ? stored.purposeKey : "request",
+      topicKey: typeof stored.topicKey === "string" ? stored.topicKey : "",
+    };
+  } catch {
+    return null;
+  }
+}
 
 type Member = { space_id: string; profile_id: string; role: Role; label: string };
 type Choice = { id: string; de: string; en: string; icon?: typeof MessageCircle };
@@ -489,10 +508,13 @@ export function WortnahApp() {
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const [adminSection, setAdminSection] = useState<AdminSection>("overview");
   const [contentArea, setContentArea] = useState<ContentArea>("communication");
-  const [contentLevel, setContentLevel] = useState<ChoiceLevel>("detail");
+  const [contentLevel, setContentLevel] = useState<ChoiceLevel>(() => storedAdminContentPath()?.level ?? "topic");
   const [contentSearch, setContentSearch] = useState("");
   const [adminChoices, setAdminChoices] = useState<CustomChoice[]>([]);
+  const [adminPurposeOptions, setAdminPurposeOptions] = useState<CustomChoice[]>([]);
   const [adminTopicOptions, setAdminTopicOptions] = useState<CustomChoice[]>([]);
+  const [selectedAdminPurposeKey, setSelectedAdminPurposeKey] = useState(() => storedAdminContentPath()?.purposeKey ?? "request");
+  const [selectedAdminTopicKey, setSelectedAdminTopicKey] = useState(() => storedAdminContentPath()?.topicKey ?? "");
   const [contentLoading, setContentLoading] = useState(false);
   const [editorBusy, setEditorBusy] = useState(false);
   const [editorNotice, setEditorNotice] = useState("");
@@ -595,6 +617,11 @@ export function WortnahApp() {
 
   const loadAdminChoices = useCallback(async () => {
     if (!member || demo || role !== "companion") return;
+    if ((contentLevel === "topic" && !selectedAdminPurposeKey) || (contentLevel === "detail" && (!selectedAdminPurposeKey || !selectedAdminTopicKey))) {
+      setAdminChoices([]);
+      setContentLoading(false);
+      return;
+    }
     setContentLoading(true);
     let query = supabase
       .from("communication_custom_choices")
@@ -603,12 +630,14 @@ export function WortnahApp() {
       .eq("choice_level", contentLevel)
       .order("sort_order", { ascending: true })
       .limit(240);
+    if (contentLevel === "topic") query = query.eq("purpose_key", selectedAdminPurposeKey);
+    if (contentLevel === "detail") query = query.eq("purpose_key", selectedAdminPurposeKey).eq("topic_key", selectedAdminTopicKey);
     if (contentSearch.trim()) query = query.ilike("label_de", `%${contentSearch.trim()}%`);
     const { data, error: loadError } = await query;
     if (loadError) setError(t.saveError);
     else setAdminChoices((data ?? []) as CustomChoice[]);
     setContentLoading(false);
-  }, [contentLevel, contentSearch, demo, member, role, t.saveError]);
+  }, [contentLevel, contentSearch, demo, member, role, selectedAdminPurposeKey, selectedAdminTopicKey, t.saveError]);
 
   const loadAdminTaxonomy = useCallback(async () => {
     if (!member || demo || role !== "companion") return;
@@ -616,11 +645,22 @@ export function WortnahApp() {
       .from("communication_custom_choices")
       .select("id,option_key,choice_level,purpose_key,topic_key,label_de,label_en,is_published,practice_eligible,priority,sort_order")
       .eq("space_id", member.space_id)
-      .eq("choice_level", "topic")
+      .in("choice_level", ["purpose", "topic"])
       .order("sort_order", { ascending: true })
-      .limit(240);
-    if (data) setAdminTopicOptions(data as CustomChoice[]);
-  }, [demo, member, role]);
+      .limit(400);
+    if (data) {
+      const taxonomy = data as CustomChoice[];
+      const purposeOptions = taxonomy.filter((item) => item.choice_level === "purpose");
+      const topicOptions = taxonomy.filter((item) => item.choice_level === "topic");
+      const nextPurposeKey = purposeOptions.some((item) => item.option_key === selectedAdminPurposeKey) ? selectedAdminPurposeKey : purposeOptions[0]?.option_key ?? "";
+      const topicsInPurpose = topicOptions.filter((item) => item.purpose_key === nextPurposeKey);
+      const nextTopicKey = topicsInPurpose.some((item) => item.option_key === selectedAdminTopicKey) ? selectedAdminTopicKey : topicsInPurpose[0]?.option_key ?? "";
+      setAdminPurposeOptions(purposeOptions);
+      setAdminTopicOptions(topicOptions);
+      setSelectedAdminPurposeKey(nextPurposeKey);
+      setSelectedAdminTopicKey(nextTopicKey);
+    }
+  }, [demo, member, role, selectedAdminPurposeKey, selectedAdminTopicKey, setSelectedAdminPurposeKey, setSelectedAdminTopicKey]);
 
   const loadAdminSearchNodes = useCallback(async () => {
     if (!member || demo || role !== "companion") return;
@@ -779,8 +819,26 @@ export function WortnahApp() {
       .channel(`communication-content-${member.space_id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "communication_custom_choices" }, refreshCommunication)
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    const refreshVisibleCommunication = () => {
+      if (document.visibilityState === "visible") refreshCommunication();
+    };
+    window.addEventListener("focus", refreshCommunication);
+    document.addEventListener("visibilitychange", refreshVisibleCommunication);
+    return () => {
+      window.removeEventListener("focus", refreshCommunication);
+      document.removeEventListener("visibilitychange", refreshVisibleCommunication);
+      void supabase.removeChannel(channel);
+    };
   }, [applyPatientChoices, demo, loadAdminChoices, loadAdminTaxonomy, loadPatientChoices, member, purpose, role, topic]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(adminContentPathStorageKey, JSON.stringify({
+      level: contentLevel,
+      purposeKey: selectedAdminPurposeKey,
+      topicKey: selectedAdminTopicKey,
+    } satisfies AdminContentPath));
+  }, [contentLevel, selectedAdminPurposeKey, selectedAdminTopicKey]);
 
   useEffect(() => {
     if (!member || demo || (view !== "practice" && adminSection !== "practice")) return;
@@ -1275,7 +1333,16 @@ export function WortnahApp() {
       practice_eligible: item.practice_eligible,
       is_published: item.is_published,
       sort_order: item.sort_order,
-    } : { label_de: "", label_en: "", purpose_key: "request", topic_key: "", priority: "medium", practice_eligible: false, is_published: true, sort_order: 1000 });
+    } : {
+      label_de: "",
+      label_en: "",
+      purpose_key: contentLevel === "purpose" ? "" : selectedAdminPurposeKey,
+      topic_key: contentLevel === "detail" ? selectedAdminTopicKey : "",
+      priority: "medium",
+      practice_eligible: false,
+      is_published: true,
+      sort_order: adminChoices.length ? Math.max(...adminChoices.map((entry) => entry.sort_order)) + 10 : 10,
+    });
   };
 
   const closeChoiceEditor = () => { setEditingChoice(null); setCreatingChoice(false); setError(""); };
@@ -1292,10 +1359,19 @@ export function WortnahApp() {
       is_published: choiceDraft.is_published,
       sort_order: Number(choiceDraft.sort_order) || 1000,
     };
+    if (contentLevel === "topic" && !payload.purpose_key) { setError("Bitte einen Bereich wählen."); return; }
     if (contentLevel === "detail" && !payload.topic_key) { setError("Bitte ein Thema wählen."); return; }
     setEditorBusy(true);
     setError("");
     try {
+      if (editingChoice?.choice_level === "topic" && editingChoice.purpose_key !== payload.purpose_key) {
+        const { count, error: childError } = await supabase.from("communication_custom_choices").select("id", { count: "exact", head: true }).eq("space_id", member.space_id).eq("topic_key", editingChoice.option_key);
+        if (childError) { setError(t.saveError); return; }
+        if ((count ?? 0) > 0) {
+          setError("Dieses Thema enthält Wörter oder Sätze. Verschieben Sie diese zuerst, bevor Sie das Thema in einen anderen Bereich verschieben.");
+          return;
+        }
+      }
       const result = editingChoice
         ? await supabase.from("communication_custom_choices").update(payload).eq("id", editingChoice.id).eq("space_id", member.space_id).select("id").single()
         : await supabase.from("communication_custom_choices").insert({
@@ -1310,6 +1386,7 @@ export function WortnahApp() {
       const savedLabel = choiceDraft.label_de.trim();
       closeChoiceEditor();
       setEditorNotice(`„${savedLabel}“ wurde gespeichert.`);
+      if (contentLevel !== "detail") await loadAdminTaxonomy();
       await loadAdminChoices();
     } finally {
       setEditorBusy(false);
@@ -1317,35 +1394,71 @@ export function WortnahApp() {
   };
 
   const toggleChoicePublished = async (item: CustomChoice) => {
-    if (!member) return;
-    const { data, error: updateError } = await supabase.from("communication_custom_choices").update({ is_published: !item.is_published }).eq("id", item.id).eq("space_id", member.space_id).select("id").single();
-    if (updateError || !data) { setError(t.saveError); return; }
-    setAdminChoices((items) => items.map((entry) => entry.id === item.id ? { ...entry, is_published: !entry.is_published } : entry));
+    if (!member || editorBusy) return;
+    setEditorBusy(true);
+    setError("");
+    setEditorNotice("");
+    try {
+      const { data, error: updateError } = await supabase.from("communication_custom_choices").update({ is_published: !item.is_published }).eq("id", item.id).eq("space_id", member.space_id).select("id").single();
+      if (updateError || !data) { setError(t.saveError); await loadAdminChoices(); return; }
+      if (item.choice_level !== "detail") await loadAdminTaxonomy();
+      await loadAdminChoices();
+      setEditorNotice(`„${item.label_de}“ ist jetzt ${item.is_published ? "ausgeblendet" : "für Werner sichtbar"}.`);
+    } finally {
+      setEditorBusy(false);
+    }
   };
 
   const moveChoice = async (item: CustomChoice, direction: -1 | 1) => {
-    if (contentSearch.trim()) return;
+    if (!member || editorBusy || contentSearch.trim()) return;
     const currentIndex = adminChoices.findIndex((entry) => entry.id === item.id);
     const other = adminChoices[currentIndex + direction];
     if (currentIndex < 0 || !other) return;
     const currentOrder = item.sort_order;
     const otherOrder = other.sort_order;
-    const [currentResult, otherResult] = await Promise.all([
-      supabase.from("communication_custom_choices").update({ sort_order: otherOrder }).eq("id", item.id),
-      supabase.from("communication_custom_choices").update({ sort_order: currentOrder }).eq("id", other.id),
-    ]);
-    if (currentResult.error || otherResult.error) { setError(t.saveError); return; }
-    await loadAdminChoices();
+    setEditorBusy(true);
+    setError("");
+    setEditorNotice("");
+    try {
+      const [currentResult, otherResult] = await Promise.all([
+        supabase.from("communication_custom_choices").update({ sort_order: otherOrder }).eq("id", item.id).eq("space_id", member.space_id).select("id").single(),
+        supabase.from("communication_custom_choices").update({ sort_order: currentOrder }).eq("id", other.id).eq("space_id", member.space_id).select("id").single(),
+      ]);
+      if (currentResult.error || otherResult.error || !currentResult.data || !otherResult.data) { setError(t.saveError); await loadAdminChoices(); return; }
+      if (item.choice_level !== "detail") await loadAdminTaxonomy();
+      await loadAdminChoices();
+      setEditorNotice(`„${item.label_de}“ wurde verschoben.`);
+    } finally {
+      setEditorBusy(false);
+    }
   };
 
   const deleteChoice = async (item: CustomChoice) => {
-    if (!member) return;
+    if (!member || editorBusy) return;
+    if (item.choice_level !== "detail") {
+      let childrenQuery = supabase.from("communication_custom_choices").select("id", { count: "exact", head: true }).eq("space_id", member.space_id);
+      childrenQuery = item.choice_level === "purpose" ? childrenQuery.eq("purpose_key", item.option_key) : childrenQuery.eq("topic_key", item.option_key);
+      const { count, error: childError } = await childrenQuery;
+      if (childError) { setError(t.saveError); return; }
+      if ((count ?? 0) > 0) {
+        window.alert(`„${item.label_de}“ enthält noch ${count} untergeordnete ${item.choice_level === "purpose" ? "Themen oder Wörter und Sätze" : "Wörter und Sätze"}. Verschieben oder löschen Sie diese zuerst. Sie können den Bereich stattdessen ausblenden.`);
+        return;
+      }
+    }
     const confirmed = window.confirm(`„${item.label_de}“ dauerhaft löschen?`);
     if (!confirmed) return;
-    const { data, error: deleteError } = await supabase.from("communication_custom_choices").delete().eq("id", item.id).eq("space_id", member.space_id).select("id").single();
-    if (deleteError || !data) { setError(t.saveError); return; }
-    setAdminChoices((items) => items.filter((entry) => entry.id !== item.id));
-    setEditorNotice(`„${item.label_de}“ wurde gelöscht.`);
+    setEditorBusy(true);
+    setError("");
+    setEditorNotice("");
+    try {
+      const { data, error: deleteError } = await supabase.from("communication_custom_choices").delete().eq("id", item.id).eq("space_id", member.space_id).select("id").single();
+      if (deleteError || !data) { setError(t.saveError); await loadAdminChoices(); return; }
+      if (item.choice_level !== "detail") await loadAdminTaxonomy();
+      await loadAdminChoices();
+      setEditorNotice(`„${item.label_de}“ wurde gelöscht.`);
+    } finally {
+      setEditorBusy(false);
+    }
   };
 
   const startSearchEditor = (item?: InternetSearchNode) => {
@@ -1649,6 +1762,9 @@ export function WortnahApp() {
   const costText = new Intl.NumberFormat(lang === "de" ? "de-DE" : "en-GB", { style: "currency", currency: "EUR" }).format(usageSummary.aiCostCents / 100);
   const maxDailyActivity = Math.max(1, ...usageSummary.dailyActivity.map((day) => day.count));
   const adminSectionTitle = adminSection === "overview" ? t.dashboard : adminSection === "content" ? (lang === "de" ? "Wörter und Bereiche" : "Words and sections") : adminSection === "practice" ? t.practice : adminSection === "activity" ? (lang === "de" ? "Aktivitäten" : "Activity") : t.settings;
+  const selectedAdminPurpose = adminPurposeOptions.find((item) => item.option_key === selectedAdminPurposeKey) ?? null;
+  const adminTopicsInPurpose = adminTopicOptions.filter((item) => item.purpose_key === selectedAdminPurposeKey);
+  const selectedAdminTopic = adminTopicsInPurpose.find((item) => item.option_key === selectedAdminTopicKey) ?? null;
   const filteredTopicOptions = adminTopicOptions.filter((item) => !choiceDraft.purpose_key || item.purpose_key === choiceDraft.purpose_key);
   const adminLevelLabel = contentLevel === "purpose"
     ? (lang === "de" ? "Ebene 1 · Bereiche" : "Level 1 · Purposes")
@@ -1657,24 +1773,35 @@ export function WortnahApp() {
       : (lang === "de" ? "Ebene 3 · Wörter & Sätze" : "Level 3 · Words & phrases");
   const purposeLabel = (key: string | null) => {
     if (!key) return lang === "de" ? "Kommunikation" : "Communication";
+    const stored = adminPurposeOptions.find((entry) => entry.option_key === key) ?? customPurposes.find((entry) => entry.option_key === key);
     const builtIn = purposes.find((entry) => entry.id === key);
-    const custom = customPurposes.find((entry) => entry.option_key === key);
-    return builtIn?.[lang] ?? (lang === "de" ? custom?.label_de : custom?.label_en || custom?.label_de) ?? key;
+    return (lang === "de" ? stored?.label_de : stored?.label_en || stored?.label_de) ?? builtIn?.[lang] ?? key;
   };
   const topicLabel = (key: string | null) => {
     if (!key) return "";
+    const stored = adminTopicOptions.find((entry) => entry.option_key === key);
     const builtIn = Object.values(topicsByPurpose).flat().find((entry) => entry.id === key);
-    const custom = adminTopicOptions.find((entry) => entry.option_key === key);
-    return builtIn?.[lang] ?? (lang === "de" ? custom?.label_de : custom?.label_en || custom?.label_de) ?? key;
+    return (lang === "de" ? stored?.label_de : stored?.label_en || stored?.label_de) ?? builtIn?.[lang] ?? key;
   };
+  const adminBranchLabel = contentLevel === "purpose"
+    ? (lang === "de" ? "Kommunikation" : "Communication")
+    : contentLevel === "topic"
+      ? purposeLabel(selectedAdminPurposeKey)
+      : topicLabel(selectedAdminTopicKey);
+  const adminVisibleCount = adminChoices.filter((item) => item.is_published).length;
+  const adminHiddenCount = adminChoices.length - adminVisibleCount;
+  const adminAddLabel = contentLevel === "purpose"
+    ? (lang === "de" ? "Bereich hinzufügen" : "Add area")
+    : contentLevel === "topic"
+      ? (lang === "de" ? "Thema hinzufügen" : "Add topic")
+      : (lang === "de" ? "Wort oder Satz hinzufügen" : "Add word or phrase");
+  const adminSearchPlaceholder = contentLevel === "purpose"
+    ? (lang === "de" ? "Bereich suchen …" : "Search areas …")
+    : contentLevel === "topic"
+      ? (lang === "de" ? "Thema suchen …" : "Search topics …")
+      : (lang === "de" ? "Wort oder Satz suchen …" : "Search words or phrases …");
   const visibleAdminPreview = adminChoices.filter((item) => item.is_published).slice(0, Math.min(choiceCount, 6));
-  const adminPreviewLabels = visibleAdminPreview.length
-    ? visibleAdminPreview.map((item) => lang === "de" ? item.label_de : item.label_en || item.label_de)
-    : contentLevel === "purpose"
-      ? purposes.slice(0, Math.min(choiceCount, 6)).map((item) => item[lang])
-      : contentLevel === "topic"
-        ? (topicsByPurpose[choiceDraft.purpose_key] ?? topicsByPurpose.tell).slice(0, Math.min(choiceCount, 6)).map((item) => item[lang])
-        : getDetails(choiceDraft.purpose_key, choiceDraft.topic_key || "my_day").slice(0, Math.min(choiceCount, 6)).map((item) => item[lang]);
+  const adminPreviewLabels = visibleAdminPreview.map((item) => lang === "de" ? item.label_de : item.label_en || item.label_de);
   const filteredAdminSearchNodes = adminSearchNodes.filter((item) => item.search_level === adminSearchLevel && (!adminSearchText.trim() || item.label_de.toLocaleLowerCase("de-DE").includes(adminSearchText.trim().toLocaleLowerCase("de-DE"))));
   const searchParentOptions = adminSearchLevel === 1 ? [] : adminSearchNodes.filter((item) => item.search_level === adminSearchLevel - 1);
   const searchNodeLabel = (key: string | null) => {
@@ -1714,32 +1841,43 @@ export function WortnahApp() {
 
           {adminSection === "content" && <>
           <div className="content-area-switch" role="tablist" aria-label={lang === "de" ? "Inhaltsbereich" : "Content area"}><button role="tab" aria-selected={contentArea === "communication"} className={contentArea === "communication" ? "active" : ""} onClick={() => { setContentArea("communication"); closeSearchEditor(); }}><MessageCircle />{lang === "de" ? "Kommunikation" : "Communication"}</button><button role="tab" aria-selected={contentArea === "search"} className={contentArea === "search" ? "active" : ""} onClick={() => { setContentArea("search"); closeChoiceEditor(); }}><Search />{t.search}</button></div>
-          {contentArea === "communication" && <section className="admin-panel content-manager">
+          {contentArea === "communication" && <section className="admin-panel content-manager communication-manager">
             <div className="content-context-header">
-              <nav className="admin-breadcrumb" aria-label={lang === "de" ? "Aktueller Bereich" : "Current location"}><House /><span>{t.dashboard}</span><ChevronRight /><span>{lang === "de" ? "Kommunikation" : "Communication"}</span><ChevronRight /><strong>{adminLevelLabel}</strong></nav>
+              <nav className="admin-breadcrumb" aria-label={lang === "de" ? "Aktueller Bereich" : "Current location"}>
+                <House /><button type="button" onClick={() => setAdminSection("overview")}>{t.dashboard}</button><ChevronRight />
+                <button type="button" onClick={() => { setContentLevel("purpose"); setContentSearch(""); closeChoiceEditor(); }}>{lang === "de" ? "Kommunikation" : "Communication"}</button><ChevronRight />
+                <button type="button" onClick={() => { setContentLevel(contentLevel); setContentSearch(""); closeChoiceEditor(); }}>{adminLevelLabel}</button>
+                {contentLevel !== "purpose" && <><ChevronRight /><button type="button" onClick={() => { setContentLevel("topic"); setContentSearch(""); closeChoiceEditor(); }}>{purposeLabel(selectedAdminPurposeKey)}</button></>}
+                {contentLevel === "detail" && <><ChevronRight /><strong>{topicLabel(selectedAdminTopicKey)}</strong></>}
+              </nav>
               <span className="level-badge">{adminLevelLabel}</span>
             </div>
             <section className="admin-patient-preview" aria-label={lang === "de" ? "Vorschau für Werner" : "Preview for Werner"}>
-              <div><Eye /><span><strong>{lang === "de" ? "So sieht Werner diesen Bereich" : "How Werner sees this area"}</strong><small>{lang === "de" ? `Vorschau mit ${choiceCount} Feldern` : `Preview with ${choiceCount} choices`}</small></span></div>
-              <div className="admin-preview-chips">{adminPreviewLabels.map((label, index) => <span key={`${label}-${index}`}>{label}</span>)}</div>
+              <div><Eye /><span><strong>{lang === "de" ? `So sieht Werner „${adminBranchLabel}“` : `How Werner sees “${adminBranchLabel}”`}</strong><small>{lang === "de" ? `${adminVisibleCount} sichtbar · Vorschau zeigt höchstens ${Math.min(choiceCount, 6)} Felder` : `${adminVisibleCount} visible · Preview shows up to ${Math.min(choiceCount, 6)} choices`}</small></span></div>
+              <div className="admin-preview-chips">{adminPreviewLabels.length ? adminPreviewLabels.map((label, index) => <span key={`${label}-${index}`}>{label}</span>) : <small>{lang === "de" ? "In dieser Auswahl ist noch nichts für Werner sichtbar." : "Nothing in this selection is visible to Werner yet."}</small>}</div>
             </section>
             <div className="content-toolbar">
-              <div className="segment-control">{(["purpose","topic","detail"] as ChoiceLevel[]).map((level, index) => <button key={level} className={contentLevel === level ? "active" : ""} onClick={() => { setContentLevel(level); closeChoiceEditor(); }}><small>{lang === "de" ? "Ebene" : "Level"} {index + 1}</small>{level === "purpose" ? (lang === "de" ? "Bereiche" : "Purposes") : level === "topic" ? (lang === "de" ? "Themen" : "Topics") : (lang === "de" ? "Wörter & Sätze" : "Words & phrases")}</button>)}</div>
-              <div className="content-actions"><label className="admin-search"><Search /><input value={contentSearch} onChange={(event) => setContentSearch(event.target.value)} placeholder={lang === "de" ? "Wort suchen …" : "Search words …"} /></label><button className="primary-button" onClick={() => startChoiceEditor()}><Plus />{lang === "de" ? "Wort hinzufügen" : "Add entry"}</button></div>
+              <div className="segment-control">{(["purpose","topic","detail"] as ChoiceLevel[]).map((level, index) => <button key={level} aria-pressed={contentLevel === level} className={contentLevel === level ? "active" : ""} onClick={() => { setContentLevel(level); setContentSearch(""); closeChoiceEditor(); }}><small>{lang === "de" ? "Ebene" : "Level"} {index + 1}</small>{level === "purpose" ? (lang === "de" ? "Bereiche" : "Purposes") : level === "topic" ? (lang === "de" ? "Themen" : "Topics") : (lang === "de" ? "Wörter & Sätze" : "Words & phrases")}</button>)}</div>
+            </div>
+            <div className={`content-branch-toolbar level-${contentLevel}`}>
+              {contentLevel !== "purpose" && <label className="content-branch-field"><span>{lang === "de" ? "Bereich auswählen" : "Choose area"}</span><select value={selectedAdminPurpose?.option_key ?? ""} onChange={(event) => { const nextPurpose = event.target.value; setSelectedAdminPurposeKey(nextPurpose); const firstTopic = adminTopicOptions.find((item) => item.purpose_key === nextPurpose); setSelectedAdminTopicKey(firstTopic?.option_key ?? ""); setContentSearch(""); closeChoiceEditor(); }}>{adminPurposeOptions.map((item) => <option key={item.id} value={item.option_key}>{lang === "de" ? item.label_de : item.label_en || item.label_de}{item.is_published ? "" : lang === "de" ? " · ausgeblendet" : " · hidden"}</option>)}</select></label>}
+              {contentLevel === "detail" && <label className="content-branch-field"><span>{lang === "de" ? "Thema auswählen" : "Choose topic"}</span><select value={selectedAdminTopic?.option_key ?? ""} onChange={(event) => { setSelectedAdminTopicKey(event.target.value); setContentSearch(""); closeChoiceEditor(); }}>{adminTopicsInPurpose.map((item) => <option key={item.id} value={item.option_key}>{lang === "de" ? item.label_de : item.label_en || item.label_de}{item.is_published ? "" : lang === "de" ? " · ausgeblendet" : " · hidden"}</option>)}</select></label>}
+              <label className="content-branch-field branch-search"><span>{lang === "de" ? "In dieser Auswahl suchen" : "Search this selection"}</span><span className="admin-search"><Search /><input value={contentSearch} onChange={(event) => setContentSearch(event.target.value)} placeholder={adminSearchPlaceholder} /></span></label>
+              <button className="primary-button branch-add" onClick={() => startChoiceEditor()} disabled={editorBusy || (contentLevel === "topic" && !selectedAdminPurpose) || (contentLevel === "detail" && !selectedAdminTopic)}><Plus />{adminAddLabel}</button>
             </div>
             {editorNotice && <p className="editor-notice" role="status"><Check />{editorNotice}</p>}
             {(creatingChoice || editingChoice) && <div className="editor-card">
-              <div className="editor-heading"><div><span className="level-badge">{adminLevelLabel}</span><h2>{editingChoice ? "Eintrag bearbeiten" : "Eintrag hinzufügen"}</h2><p>{purposeLabel(contentLevel === "purpose" ? null : choiceDraft.purpose_key)}{contentLevel === "detail" && choiceDraft.topic_key ? ` › ${topicLabel(choiceDraft.topic_key)}` : ""}</p></div><button className="editor-cancel" onClick={closeChoiceEditor} disabled={editorBusy}>Abbrechen</button></div>
+              <div className="editor-heading"><div><span className="level-badge">{adminLevelLabel}</span><h2>{editingChoice ? "Eintrag bearbeiten" : adminAddLabel}</h2><p>{purposeLabel(contentLevel === "purpose" ? null : choiceDraft.purpose_key)}{contentLevel === "detail" && choiceDraft.topic_key ? ` › ${topicLabel(choiceDraft.topic_key)}` : ""}</p></div><button className="editor-cancel" onClick={closeChoiceEditor} disabled={editorBusy}>Abbrechen</button></div>
               <div className="editor-workspace"><div className="editor-grid"><label className="editor-primary-field">Deutscher Text<input value={choiceDraft.label_de} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, label_de: event.target.value }))} placeholder={contentLevel === "detail" ? "Zum Beispiel: Bitte bring mir Wasser." : "Bezeichnung für Werner"} autoFocus /></label>{contentLevel !== "purpose" && <label>Bereich<select value={choiceDraft.purpose_key} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, purpose_key: event.target.value, topic_key: "" }))}>{purposes.map((item) => <option key={item.id} value={item.id}>{item.de}</option>)}{customPurposes.map((item) => <option key={item.id} value={item.option_key}>{item.label_de}</option>)}</select></label>}{contentLevel === "detail" && <label>Thema<select value={choiceDraft.topic_key} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, topic_key: event.target.value }))}><option value="">Thema wählen</option>{filteredTopicOptions.map((item) => <option key={item.id} value={item.option_key}>{item.label_de}</option>)}</select></label>}<label>Reihenfolge<input type="number" min="0" value={choiceDraft.sort_order} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, sort_order: Number(event.target.value) }))} /></label><label>Priorität<select value={choiceDraft.priority} onChange={(event) => setChoiceDraft((draft) => ({ ...draft, priority: event.target.value as CustomChoice["priority"] }))}><option value="high">Hoch</option><option value="medium">Mittel</option><option value="low">Niedrig</option></select></label></div><aside className="editor-preview"><span>Vorschau für Werner</span><strong>{choiceDraft.label_de.trim() || "Ihr deutscher Text"}</strong><small>{choiceDraft.is_published ? "Sichtbar" : "Ausgeblendet"} · {adminLevelLabel}</small></aside></div>
               <div className="editor-actions"><div className="editor-toggles"><button className={choiceDraft.is_published ? "on" : ""} onClick={() => setChoiceDraft((draft) => ({ ...draft, is_published: !draft.is_published }))} disabled={editorBusy}>{choiceDraft.is_published ? <Eye /> : <EyeOff />}Für Werner sichtbar</button>{contentLevel === "detail" && <button className={choiceDraft.practice_eligible ? "on" : ""} onClick={() => setChoiceDraft((draft) => ({ ...draft, practice_eligible: !draft.practice_eligible }))} disabled={editorBusy}>{choiceDraft.practice_eligible ? <ToggleRight /> : <ToggleLeft />}Auch zum Üben</button>}</div><button className="primary-button save-editor" onClick={saveChoice} disabled={editorBusy}><Check />{editorBusy ? "Wird gespeichert …" : "Speichern"}</button></div>{error && <p className="form-error" role="alert">{error}</p>}
             </div>}
-            <div className="manager-summary"><strong>{contentLoading ? "…" : adminChoices.length}</strong><span>{lang === "de" ? `Einträge auf ${adminLevelLabel}` : `entries on ${adminLevelLabel}`}</span></div>
-            <div className="manager-list">{!contentLoading && adminChoices.length === 0 ? <p className="quiet-empty">{lang === "de" ? "Keine Einträge gefunden." : "No entries found."}</p> : adminChoices.map((item, index) => <article key={item.id} className={!item.is_published ? "hidden-item" : ""}>
+            <div className="manager-summary"><div><strong>{contentLoading ? "…" : adminChoices.length}</strong><span>{lang === "de" ? `${contentLevel === "purpose" ? "Bereiche" : contentLevel === "topic" ? "Themen" : "Wörter und Sätze"} in dieser Auswahl` : `entries in this selection`}</span></div>{!contentLoading && <small>{adminVisibleCount} sichtbar{adminHiddenCount ? ` · ${adminHiddenCount} ausgeblendet` : ""}</small>}</div>
+            <div className="manager-list">{!contentLoading && adminChoices.length === 0 ? <div className="manager-empty"><p>{contentSearch.trim() ? (lang === "de" ? "Keine passenden Einträge in dieser Auswahl gefunden." : "No matching entries in this selection.") : (lang === "de" ? "In dieser Auswahl sind noch keine Einträge vorhanden." : "There are no entries in this selection yet.")}</p>{!contentSearch.trim() && <button className="primary-button" onClick={() => startChoiceEditor()} disabled={editorBusy}><Plus />{adminAddLabel}</button>}</div> : adminChoices.map((item, index) => <article key={item.id} className={!item.is_published ? "hidden-item" : ""}>
               <GripVertical className="drag-handle" aria-hidden="true" />
-              <button className="publish-toggle" onClick={() => toggleChoicePublished(item)} aria-label={item.is_published ? (lang === "de" ? "Ausblenden" : "Hide") : (lang === "de" ? "Einblenden" : "Show")}>{item.is_published ? <Eye /> : <EyeOff />}</button>
+              <button className="publish-toggle" onClick={() => void toggleChoicePublished(item)} disabled={editorBusy} aria-label={item.is_published ? (lang === "de" ? "Ausblenden" : "Hide") : (lang === "de" ? "Einblenden" : "Show")}>{item.is_published ? <Eye /> : <EyeOff />}</button>
               <div><strong>{item.label_de}</strong><small>{purposeLabel(item.purpose_key)}{item.topic_key ? ` › ${topicLabel(item.topic_key)}` : ""}</small></div>
-              <div className="reorder-actions"><button onClick={() => void moveChoice(item, -1)} disabled={Boolean(contentSearch.trim()) || index === 0} aria-label={lang === "de" ? "Nach oben" : "Move up"}><ArrowUp /></button><button onClick={() => void moveChoice(item, 1)} disabled={Boolean(contentSearch.trim()) || index === adminChoices.length - 1} aria-label={lang === "de" ? "Nach unten" : "Move down"}><ArrowDown /></button></div>
-              <span className={`priority-tag ${item.priority}`}>{item.priority}</span><button className="icon-action" onClick={() => startChoiceEditor(item)} aria-label={lang === "de" ? "Bearbeiten" : "Edit"}><Pencil /></button><button className="icon-action danger" onClick={() => deleteChoice(item)} aria-label={lang === "de" ? "Löschen" : "Delete"}><Trash2 /></button>
+              <div className="reorder-actions"><button onClick={() => void moveChoice(item, -1)} disabled={editorBusy || Boolean(contentSearch.trim()) || index === 0} aria-label={lang === "de" ? "Nach oben" : "Move up"}><ArrowUp /></button><button onClick={() => void moveChoice(item, 1)} disabled={editorBusy || Boolean(contentSearch.trim()) || index === adminChoices.length - 1} aria-label={lang === "de" ? "Nach unten" : "Move down"}><ArrowDown /></button></div>
+              <span className={`priority-tag ${item.priority}`}>{item.priority}</span><div className="row-management-actions">{contentLevel === "topic" && <button className="icon-action folder-action" onClick={() => { setSelectedAdminTopicKey(item.option_key); setContentLevel("detail"); setContentSearch(""); closeChoiceEditor(); }} disabled={editorBusy} aria-label={lang === "de" ? `„${item.label_de}“ öffnen` : `Open “${item.label_de}”`}><FolderOpen /></button>}<button className="icon-action" onClick={() => startChoiceEditor(item)} disabled={editorBusy} aria-label={lang === "de" ? "Bearbeiten" : "Edit"}><Pencil /></button><button className="icon-action danger" onClick={() => void deleteChoice(item)} disabled={editorBusy} aria-label={lang === "de" ? "Löschen" : "Delete"}><Trash2 /></button></div>
             </article>)}</div>
           </section>}
 
