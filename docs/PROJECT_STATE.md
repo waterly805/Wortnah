@@ -131,6 +131,44 @@ The repository is the canonical development record. A local clone is a working c
 
 ### In progress
 
+### FEATURE-003 — Priority email alerts with Admin recipients
+
+Status: Planned — deferred to the next work session to conserve the remaining weekly allowance
+
+Goal:
+Send a private, traceable Gmail alert when Werner confirms an important or very important message, using up to three recipients managed by Admin 1 or Admin 2.
+
+Acceptance criteria:
+- [ ] Normal-priority messages are stored in Wortnah but never trigger an email, regardless of recipient preferences.
+- [ ] Important and very important messages send the approved Option B email: privacy-safe subject, Werner's message, the saved German navigation path, a short conversation tip, timestamp, priority and the public Wortnah link.
+- [ ] The very-important variant opens with a stronger request to review the message promptly.
+- [ ] Admin 1 and Admin 2 can add, update, enable/disable and remove up to three consented recipient addresses without exposing the Gmail App Password.
+- [ ] Admin can send a privacy-safe test email and can review recent sent/failed delivery status.
+- [ ] Message storage succeeds independently of email delivery; Werner receives a clear saved/delivery result without exposing provider details.
+- [ ] The authenticated Edge Function accepts the active custom and Sites origins, prevents cross-space access and avoids duplicate delivery for a message/recipient pair.
+- [ ] No AI service is used for sending, formatting or analysing these alerts.
+
+Affected areas:
+- Frontend: Werner message send result and Admin settings/recipient/delivery controls.
+- Backend/Supabase: Recipient/delivery RLS reconciliation and authenticated Gmail SMTP Edge Function.
+- Database/migrations: Save an immutable German navigation-path snapshot with each message and reconcile the existing live email-alert tables into repository migrations.
+- Audio: No change.
+- Deployment: Supabase migration/function plus a new verified public Sites version.
+
+Verification required:
+- [ ] Focused automated checks cover priority gating, Option B content, immutable navigation path and Admin controls.
+- [ ] Supabase migration, RLS and deployed function state are verified.
+- [ ] Production build, lint and related regressions pass.
+- [ ] Admin test email and one important-message delivery succeed after a consented recipient and Gmail secrets are available.
+- [ ] The deployed Site remains public and the anonymous landing page still loads.
+
+Notes / decisions:
+- Gmail 2-Step Verification and its App Password belong to the sending Google account; Supabase account MFA is a separate administrator-security setting and is not part of Werner's patient flow.
+- Gmail sender credentials remain only in Supabase Edge Function secrets. Recipient addresses are companion-only protected data.
+- Reference lock: preserve the current white/navy Wortnah system; use description-left/control-right settings rows, compact channel/status chips and a simple delivery list based on the reviewed Sunsama, Mercury and Zapier patterns.
+- 11 September preflight: the live backend already has `email_notification_recipients`, `email_notification_deliveries` and active `send-message-email-alerts` version 14, but their canonical migration/function source is missing from this repository. The live function still permits normal-priority forwarding and only accepts an obsolete Site origin, so it must be reconciled rather than extended blindly.
+- Next implementation order: reconcile the live schema into an idempotent repository migration; add an immutable German navigation-path snapshot to messages; add the canonical Edge Function source with strict important/very-important gating and Option B copy; add Admin recipient/test/delivery UI; add focused tests; then migrate, deploy, build, publish and run one consented test email.
+
 ### RELEASE-0.5.1 — Authenticated live acceptance
 
 Status: In progress — DNS, HTTPS, and backend origin compatibility are active; authenticated live acceptance remains.
@@ -262,6 +300,7 @@ Acceptance criteria:
 Notes / decisions:
 - DNS verification values are supplied directly from Sites to GoDaddy and are not stored in repository documentation.
 - Existing MX, nameserver and unrelated DNS records must remain unchanged.
+- 11 September browser recovery: the already-open bare-domain tab still showed an old GoDaddy Airo page. A normal reload followed the working apex redirect to `https://www.wort-nah.com/`; the Wortnah profile-selection/login start with Werner, Admin 1 and Admin 2 was then visibly confirmed. Both the custom and platform URLs returned HTTP 200, so no DNS or Site deployment change was made.
 
 ### Next approved work
 
