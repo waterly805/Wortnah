@@ -57,9 +57,15 @@ test("provider failures become safe retry or terminal states", () => {
   assert.match(appSource, /Keine E-Mail – normale Priorität/);
 });
 
+test("accepted SMTP deliveries are not duplicated by cleanup or finalization failures", () => {
+  assert.match(functionSource, /delivery already accepted/);
+  assert.match(functionSource, /for \(let finishAttempt = 1; finishAttempt <= 3; finishAttempt \+= 1\)/);
+  assert.match(functionSource, /delivery status update failed/);
+  assert.match(migration, /if delivery\.status = 'sent' then return 'sent'/);
+});
+
 test("retention is limited to the canonical active space", () => {
   assert.match(migration, /sent_at < now\(\) - interval '30 days'/);
   assert.match(migration, /317579c9-9b2e-42fb-8713-832edbc25556/);
   assert.match(migration, /on delete cascade/);
 });
-

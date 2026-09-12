@@ -24,7 +24,7 @@ Never record access codes, the daily PIN, Gmail App Passwords, recipient address
 - [ ] Normal priority saves successfully and creates no email delivery.
 - [ ] Important and very-important messages save before attempting email.
 - [ ] One consented test email succeeds without exposing secrets.
-- [ ] One important-message email succeeds with approved German copy and immutable path.
+- [x] One important-message email succeeds with approved German copy and immutable path. Verified in Gmail Sent and reconciled to a final `sent` delivery row on 12 September 2026.
 - [ ] A controlled failure leaves the message saved and shows a clear failure state.
 - [ ] Manual retry does not duplicate a successful message/recipient delivery.
 - [ ] Admin recipient controls enforce a maximum of three and Werner cannot access recipient data.

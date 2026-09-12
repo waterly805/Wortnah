@@ -127,7 +127,10 @@ async function sendWithGmailSmtp(input: { from: string; to: string; mime: string
     await command("DATA", [354]);
     await connection.write(encoder.encode(`${smtpData(input.mime)}\r\n.\r\n`));
     await expect([250]);
-    await command("QUIT", [221]);
+    // Gmail has accepted responsibility for the message after the DATA 250.
+    // A connection close while quitting must not turn an accepted message into
+    // a retry, because that could send the same alert twice.
+    try { await command("QUIT", [221]); } catch { /* delivery already accepted */ }
   } finally {
     clearTimeout(timeout);
     try { connection?.close(); } catch { /* already closed by timeout */ }
@@ -314,15 +317,26 @@ Deno.serve(async (request) => {
         console.error("email delivery failed", errorCode);
       }
 
-      const { data: finalStatus, error: finishError } = await admin.rpc("finish_email_notification_delivery", {
-        worker_key: workerKey,
-        target_delivery_id: job.delivery_id,
-        delivered,
-        safe_error_code: errorCode,
-        provider_id: null,
-        retryable,
-      });
-      if (finishError) throw new Error("delivery_status_update_failed");
+      let finalStatus: string | null = null;
+      let finishFailed = true;
+      for (let finishAttempt = 1; finishAttempt <= 3; finishAttempt += 1) {
+        const { data, error: finishError } = await admin.rpc("finish_email_notification_delivery", {
+          worker_key: workerKey,
+          target_delivery_id: job.delivery_id,
+          delivered,
+          safe_error_code: errorCode,
+          provider_id: null,
+          retryable,
+        });
+        if (!finishError) {
+          finalStatus = data as string;
+          finishFailed = false;
+          break;
+        }
+        console.error("delivery status update failed", finishError.code ?? "unknown", `attempt_${finishAttempt}`);
+        if (finishAttempt < 3) await new Promise((resolve) => setTimeout(resolve, finishAttempt * 250));
+      }
+      if (finishFailed) throw new Error("delivery_status_update_failed");
       if (finalStatus === "sent") sent += 1;
       else if (finalStatus === "retrying") retrying += 1;
       else failed += 1;

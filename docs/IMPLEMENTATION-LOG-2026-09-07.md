@@ -313,3 +313,15 @@ Date: 11 September 2026
 - Verified production contains the new message column, recipient/outbox tables, claim function and both cron schedules. Active-space counts remained one message, zero recipients and zero deliveries.
 - Deployed repository source as Edge Function version 15 with gateway JWT verification disabled and application-level authentication enforced. A no-key drain probe returned 401.
 - Published the verified email settings and delivery-status frontend to the existing public Wortnah Site. No real email was sent; consented test and important-message acceptance remain.
+
+## Batch 46: Gmail authentication and accepted-delivery finalization
+
+Date: 12 September 2026
+
+- Enabled 2-Step Verification on the dedicated Wortnah Gmail account and created a dedicated Google App Password. The credential remains only in Supabase Edge Function secrets and was never added to source or documentation.
+- Diagnosed the live priority failures as Gmail SMTP authentication errors rather than queue, priority, recipient or scheduler failures.
+- Retried only the single delivery explicitly approved by the user. Gmail Sent verifies the approved important-message email with the Option B German content and immutable navigation path.
+- Reconciled that delivery to `sent` only after Gmail provider proof; the record has no error or stale lock. The other three historical failed deliveries were not resent.
+- Hardened SMTP delivery so Gmail's post-DATA `250` is the acceptance boundary and QUIT is best-effort, avoiding a duplicate retry when the provider has already accepted the message.
+- Added three idempotent retries for the final delivery-status RPC so a transient database update failure does not leave an accepted email stuck in `processing`.
+- Passed lint, the bounded production build and all 54 automated checks. Deployed `send-message-email-alerts` version 21 with gateway JWT verification disabled and application-level authentication retained.
