@@ -133,6 +133,8 @@ Exit condition: live database behavior matches the 30-day contract.
 
 ### 6. Rebuild and deploy the email function
 
+Result: backend complete on 12 September 2026. Version 15 is deployed from canonical repository source after a successful rollback-only migration validation and live object verification. No email was sent during deployment.
+
 - Save canonical Edge Function source in the repository.
 - Enforce important/very-important gating, current origins, server-only Gmail credentials and idempotent delivery.
 - Return safe per-recipient outcomes and support a privacy-safe test mode.
@@ -141,6 +143,8 @@ Exit condition: focused function tests pass and the deployed version matches rep
 
 ### 7. Add Admin email settings
 
+Result: frontend source and automated checks complete locally on 12 September 2026; Site publication and authenticated Admin acceptance remain.
+
 - Add/update/enable/disable/remove up to three recipients.
 - Send a privacy-safe test and show the result.
 - Mask addresses outside the editing context and never expose sender credentials.
@@ -148,6 +152,8 @@ Exit condition: focused function tests pass and the deployed version matches rep
 Exit condition: both Admin roles pass authorized CRUD tests and Werner cannot access recipient data.
 
 ### 8. Connect message and delivery results
+
+Result: frontend source and automated checks complete locally on 12 September 2026; authenticated live normal/important/failure acceptance remains.
 
 - Save messages independently from email delivery.
 - Show compact overall delivery status and recipient-level details.

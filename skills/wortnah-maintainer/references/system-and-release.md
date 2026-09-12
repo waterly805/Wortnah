@@ -1,6 +1,6 @@
 # Wortnah system and release map
 
-Verified production baseline: 11 September 2026.
+Verified production baseline: 12 September 2026.
 
 ## Current services
 
@@ -11,8 +11,8 @@ Verified production baseline: 11 September 2026.
 - Supabase project: `dffmqcqidqkbqeorjtlb`
 - Active Werner space: `317579c9-9b2e-42fb-8713-832edbc25556`
 - Private audio bucket: `wortnah-voice-audio`
-- Current canonical functions: `pilot-login`, `wortnah-audio`, and `wortnah-audio-import`
-- `send-message-email-alerts` version 14 remains deployed, but the completed 0.5.5 checkpoint-2 audit found that its source is absent from the repository, it permits normal-priority forwarding, uses an obsolete origin/link, is disconnected from the current client and logged repeated forwarding failures. Replace it from reviewed canonical source in checkpoint 6; do not invoke it unchanged.
+- Current canonical functions include `pilot-login`, `wortnah-audio`, `wortnah-audio-import`, and repository-backed `send-message-email-alerts`.
+- `send-message-email-alerts` version 15 is active with private worker-key/authenticated-user checks, strict important/very-important gating, durable retries and current origins. Gateway JWT verification is intentionally disabled so the private-key cron worker can enter the function; authorization remains enforced inside the function.
 
 The Site audience is public as of 11 September 2026. Check it again before future releases. The app-level Werner/Admin login does not replace the Site access gate.
 
@@ -25,9 +25,9 @@ The Site audience is public as of 11 September 2026. Check it again before futur
 - 180 tier-zero reviewed audio registry rows exist in the active Werner space.
 - Those 180 rows have 180 matching private storage objects and zero missing paths.
 - The production build, lint and all 47 automated checks pass for the deployed 0.5.4 runtime source.
-- The 0.5.5 checkpoint-2 read-only audit measured the database at approximately 20 MB. The canonical active space has one current message and receipt and no email recipient/delivery rows; 25 historical messages and the only configured recipient remain in a legacy space and are outside the 0.5.5 import/delete scope.
-- Gmail sender credential names are present as Supabase server-side secrets, so recurring delivery must not require browser login. This is configuration evidence only: version-14 logs show forwarding failures and no live delivery row proves successful SMTP delivery.
-- The daily `private.apply_retention()` cron runs at 02:30 but currently archives ordinary messages at 90 days and purges only manually trashed messages after 30 days. The approved automatic 30-day message/receipt/delivery contract still requires checkpoint-3 migration work.
+- The 0.5.5 checkpoint-2 read-only audit measured the database at approximately 20 MB. After the 12 September migration, the canonical active space still has one current message and no email recipient/delivery rows; 25 historical messages and the only configured recipient remain in a legacy space and are outside the 0.5.5 import/delete scope.
+- Gmail sender credential names are present as Supabase server-side secrets, so recurring delivery does not require browser login. No consented version-15 test or message delivery has yet been performed.
+- The new 02:40 active-space retention schedule deletes messages older than 30 days; cascades remove associated receipts and Wortnah delivery records. The legacy-space data remains untouched. The email worker schedule runs every two minutes.
 
 An earlier failed import stored an unused copy under an older space. Do not use total bucket object count as the active-pack count. Remove old-space files only after confirming no active profile or registry references that space.
 

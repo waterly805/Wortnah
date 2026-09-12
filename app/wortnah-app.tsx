@@ -93,6 +93,23 @@ function storedAdminContentPath(): AdminContentPath | null {
 type Member = { space_id: string; profile_id: string; role: Role; label: string };
 type Choice = { id: string; de: string; en: string; icon?: typeof MessageCircle };
 type Receipt = { read_at: string; profile_id: string };
+type EmailDelivery = {
+  id: string;
+  status: "queued" | "processing" | "retrying" | "sent" | "failed";
+  attempt_count: number;
+  max_attempts: number;
+  error_code: string | null;
+  sent_at: string | null;
+  next_attempt_at: string;
+};
+type EmailRecipient = {
+  id: string;
+  email: string;
+  enabled: boolean;
+  consented_at: string;
+  notify_important: boolean;
+  notify_very_important: boolean;
+};
 type SearchHistoryItem = { id: string; text: string; createdAt: string };
 type CustomChoice = {
   id: string;
@@ -125,6 +142,7 @@ type AppMessage = {
   sent_at: string;
   sender_profile_id: string;
   message_receipts?: Receipt[];
+  email_notification_deliveries?: EmailDelivery[];
 };
 type AiBudget = { ai_enabled: boolean; review_mode: "manual_only" | "disabled"; monthly_request_limit: number; monthly_input_token_limit: number; monthly_output_token_limit: number; monthly_cost_limit_cents: number };
 type UsageSummary = {
@@ -139,6 +157,16 @@ type UsageSummary = {
   budget: AiBudget;
   dailyActivity: Array<{ label: string; count: number }>;
 };
+
+function emailDeliveryLabel(message: AppMessage) {
+  if (message.priority === "normal") return "Keine E-Mail – normale Priorität";
+  const deliveries = message.email_notification_deliveries;
+  if (!deliveries) return null;
+  if (!deliveries.length) return "Keine E-Mail – nicht eingeschaltet";
+  if (deliveries.some((delivery) => delivery.status === "failed")) return "E-Mail fehlgeschlagen";
+  if (deliveries.every((delivery) => delivery.status === "sent")) return "E-Mail gesendet";
+  return "E-Mail wird erneut versucht";
+}
 
 const purposeIds: Record<string, string> = {
   tell: "10000000-0000-4000-8000-000000000001",
@@ -542,6 +570,12 @@ export function WortnahApp() {
   const [topic, setTopic] = useState<Choice | null>(null);
   const [detail, setDetail] = useState<Choice | null>(null);
   const [priority, setPriority] = useState<Priority>("normal");
+  const [messageSending, setMessageSending] = useState(false);
+  const [emailRecipients, setEmailRecipients] = useState<EmailRecipient[]>([]);
+  const [emailRecipientDraft, setEmailRecipientDraft] = useState("");
+  const [emailRecipientConsent, setEmailRecipientConsent] = useState(false);
+  const [emailSettingsBusy, setEmailSettingsBusy] = useState(false);
+  const [emailSettingsNotice, setEmailSettingsNotice] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [speaking, setSpeaking] = useState<string | null>(null);
   const [practiceIndex, setPracticeIndex] = useState(0);
@@ -562,7 +596,10 @@ export function WortnahApp() {
 
   const loadMessages = useCallback(async (activeMember: Member | null = member) => {
     if (!activeMember || demo) return;
-    const { data } = await supabase.from("messages").select("id,body_de,body_en,priority,sent_at,sender_profile_id,message_receipts(profile_id,read_at)").eq("space_id", activeMember.space_id).is("archived_at", null).order("sent_at", { ascending: false }).limit(50);
+    const messageSelect = activeMember.role === "companion"
+      ? "id,body_de,body_en,priority,sent_at,sender_profile_id,message_receipts(profile_id,read_at),email_notification_deliveries(id,status,attempt_count,max_attempts,error_code,sent_at,next_attempt_at)"
+      : "id,body_de,body_en,priority,sent_at,sender_profile_id,message_receipts(profile_id,read_at)";
+    const { data } = await supabase.from("messages").select(messageSelect).eq("space_id", activeMember.space_id).is("archived_at", null).order("sent_at", { ascending: false }).limit(50);
     if (data) setMessages(data as AppMessage[]);
   }, [demo, member]);
 
@@ -682,6 +719,17 @@ export function WortnahApp() {
     const { data } = await supabase.from("interaction_events").select("id,event_type,screen_key,occurred_at,profile_id,metadata").eq("space_id", member.space_id).order("occurred_at", { ascending: false }).limit(120);
     if (data) setActivityEvents(data as ActivityEvent[]);
   }, [demo, member, role]);
+
+  const loadEmailRecipients = useCallback(async () => {
+    if (!member || demo || role !== "companion") return;
+    const { data, error: loadError } = await supabase
+      .from("email_notification_recipients")
+      .select("id,email,enabled,consented_at,notify_important,notify_very_important")
+      .eq("space_id", member.space_id)
+      .order("created_at", { ascending: true });
+    if (loadError) setError(t.saveError);
+    else setEmailRecipients((data ?? []) as EmailRecipient[]);
+  }, [demo, member, role, t.saveError]);
 
   const loadUsageSummary = useCallback(async (activeMember: Member | null = member) => {
     if (!activeMember) return;
@@ -875,6 +923,12 @@ export function WortnahApp() {
     const task = window.setTimeout(() => void loadActivityEvents(), 0);
     return () => window.clearTimeout(task);
   }, [adminSection, loadActivityEvents, view]);
+
+  useEffect(() => {
+    if (view !== "admin" || adminSection !== "settings") return;
+    const task = window.setTimeout(() => void loadEmailRecipients(), 0);
+    return () => window.clearTimeout(task);
+  }, [adminSection, loadEmailRecipients, view]);
 
   useEffect(() => {
     if (!member || (view !== "messages" && view !== "admin")) return;
@@ -1269,19 +1323,43 @@ export function WortnahApp() {
   };
 
   const sendMessage = async () => {
-    if (!detail || !purpose || !topic || !member) return;
+    if (!detail || !purpose || !topic || !member || messageSending) return;
     setError("");
+    setStatus("");
+    setMessageSending(true);
     if (demo) {
       setMessages((items) => [{ id: crypto.randomUUID(), body_de: detail.de, body_en: detail.en, priority, sent_at: new Date().toISOString(), sender_profile_id: "user", message_receipts: [] }, ...items]);
-      setCommStep("success"); return;
+      setStatus(priority === "normal" ? "Mitteilung gespeichert. Normale Priorität – keine E-Mail." : "Mitteilung gespeichert. E-Mail-Benachrichtigung vorgemerkt.");
+      setCommStep("success"); setMessageSending(false); return;
     }
-    const { data, error: sendError } = await supabase.from("messages").insert({
-      space_id: member.space_id, sender_profile_id: member.profile_id, purpose_node_id: purposeIds[purpose.id] ?? null, topic_node_id: topicIds[topic.id] ?? null,
-      content_type: "text", body_de: detail.de, body_en: detail.en, priority,
-    }).select("id").single();
-    if (sendError || !data) { setError(t.saveError); return; }
-    await supabase.from("interaction_events").insert({ space_id: member.space_id, profile_id: member.profile_id, event_type: "message_sent", screen_key: "message_success", choice_count: choiceCount, metadata: { purpose_id: purpose.id, topic_id: topic.id, priority } });
-    setCommStep("success");
+    try {
+      const navigationPathDe = [purpose.de, topic.de, detail.de].join(" › ");
+      const { data, error: sendError } = await supabase.from("messages").insert({
+        space_id: member.space_id, sender_profile_id: member.profile_id, purpose_node_id: purposeIds[purpose.id] ?? null, topic_node_id: topicIds[topic.id] ?? null,
+        content_type: "text", body_de: detail.de, body_en: detail.en, priority,
+        navigation_path_de: navigationPathDe, email_notification_requested: priority !== "normal",
+      }).select("id").single();
+      if (sendError || !data) { setError(t.saveError); return; }
+
+      await supabase.from("interaction_events").insert({ space_id: member.space_id, profile_id: member.profile_id, event_type: "message_sent", screen_key: "message_success", choice_count: choiceCount, metadata: { purpose_id: purpose.id, topic_id: topic.id, priority } });
+
+      if (priority === "normal") {
+        setStatus("Mitteilung gespeichert. Normale Priorität – keine E-Mail.");
+      } else {
+        const { data: deliveryResult, error: deliveryError } = await supabase.functions.invoke("send-message-email-alerts", {
+          body: { mode: "message", message_id: data.id },
+        });
+        const deliveryStatus = deliveryResult?.status as string | undefined;
+        if (!deliveryError && deliveryStatus === "sent") setStatus("Mitteilung gespeichert und E-Mail gesendet.");
+        else if (!deliveryError && deliveryStatus === "no_recipients") setStatus("Mitteilung gespeichert. Es ist keine E-Mail-Benachrichtigung eingeschaltet.");
+        else if (!deliveryError && deliveryStatus === "failed") setStatus("Mitteilung gespeichert. Die E-Mail konnte nicht gesendet werden. Begleitung sieht den Fehler.");
+        else setStatus("Mitteilung gespeichert. Die E-Mail wird automatisch weiter versucht.");
+      }
+      await loadMessages(member);
+      setCommStep("success");
+    } finally {
+      setMessageSending(false);
+    }
   };
 
   const markRead = async (message: AppMessage) => {
@@ -1291,6 +1369,21 @@ export function WortnahApp() {
       if (readError) { setError(t.saveError); return; }
     }
     setMessages((items) => items.map((item) => item.id === message.id ? { ...item, message_receipts: [{ profile_id: member.profile_id, read_at: new Date().toISOString() }] } : item));
+  };
+
+  const retryEmailDelivery = async (message: AppMessage) => {
+    if (!member || role !== "companion" || emailSettingsBusy) return;
+    const failedDelivery = message.email_notification_deliveries?.find((delivery) => delivery.status === "failed");
+    if (!failedDelivery) return;
+    setEmailSettingsBusy(true); setError(""); setStatus("E-Mail wird erneut versucht …");
+    try {
+      const { data, error: retryError } = await supabase.functions.invoke("send-message-email-alerts", {
+        body: { mode: "retry", delivery_id: failedDelivery.id },
+      });
+      if (retryError || data?.status === "failed") setError("Die E-Mail konnte noch nicht gesendet werden.");
+      else setStatus(data?.status === "sent" ? "E-Mail wurde gesendet." : "Die E-Mail wird automatisch weiter versucht.");
+      await loadMessages(member);
+    } finally { setEmailSettingsBusy(false); }
   };
 
   const savePreference = async (patch: Record<string, unknown>) => {
@@ -1317,6 +1410,74 @@ export function WortnahApp() {
     } finally {
       setSettingsBusy(false);
     }
+  };
+
+  const addEmailRecipient = async () => {
+    if (!member || role !== "companion" || emailSettingsBusy) return;
+    const email = emailRecipientDraft.trim().toLocaleLowerCase("de-DE");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Bitte eine gültige E-Mail-Adresse eingeben."); return; }
+    if (!emailRecipientConsent) { setError("Bitte bestätigen Sie zuerst die Zustimmung der empfangenden Person."); return; }
+    if (emailRecipients.length >= 3) { setError("Es können höchstens drei E-Mail-Empfänger gespeichert werden."); return; }
+    setEmailSettingsBusy(true); setError(""); setEmailSettingsNotice("");
+    try {
+      const { error: insertError } = await supabase.from("email_notification_recipients").insert({
+        space_id: member.space_id,
+        created_by: member.profile_id,
+        email,
+        enabled: true,
+        notify_normal: false,
+        notify_important: true,
+        notify_very_important: true,
+        consented_at: new Date().toISOString(),
+      });
+      if (insertError) { setError(t.saveError); return; }
+      setEmailRecipientDraft(""); setEmailRecipientConsent(false);
+      setEmailSettingsNotice("E-Mail-Empfänger wurde gespeichert und eingeschaltet.");
+      await loadEmailRecipients();
+    } finally { setEmailSettingsBusy(false); }
+  };
+
+  const toggleEmailRecipient = async (recipient: EmailRecipient) => {
+    if (!member || role !== "companion" || emailSettingsBusy) return;
+    setEmailSettingsBusy(true); setError(""); setEmailSettingsNotice("");
+    try {
+      const { error: updateError } = await supabase
+        .from("email_notification_recipients")
+        .update({ enabled: !recipient.enabled })
+        .eq("id", recipient.id)
+        .eq("space_id", member.space_id);
+      if (updateError) { setError(t.saveError); return; }
+      setEmailSettingsNotice(!recipient.enabled ? "E-Mail-Benachrichtigung ist eingeschaltet." : "E-Mail-Benachrichtigung ist ausgeschaltet.");
+      await loadEmailRecipients();
+    } finally { setEmailSettingsBusy(false); }
+  };
+
+  const removeEmailRecipient = async (recipient: EmailRecipient) => {
+    if (!member || role !== "companion" || emailSettingsBusy) return;
+    if (!window.confirm(`E-Mail-Empfänger „${recipient.email}“ wirklich entfernen?`)) return;
+    setEmailSettingsBusy(true); setError(""); setEmailSettingsNotice("");
+    try {
+      const { error: deleteError } = await supabase
+        .from("email_notification_recipients")
+        .delete()
+        .eq("id", recipient.id)
+        .eq("space_id", member.space_id);
+      if (deleteError) { setError(t.saveError); return; }
+      setEmailSettingsNotice("E-Mail-Empfänger wurde entfernt.");
+      await loadEmailRecipients();
+    } finally { setEmailSettingsBusy(false); }
+  };
+
+  const sendEmailRecipientTest = async (recipient: EmailRecipient) => {
+    if (emailSettingsBusy || !recipient.enabled) return;
+    setEmailSettingsBusy(true); setError(""); setEmailSettingsNotice("Test-E-Mail wird gesendet …");
+    try {
+      const { data, error: testError } = await supabase.functions.invoke("send-message-email-alerts", {
+        body: { mode: "test", recipient_id: recipient.id },
+      });
+      if (testError || data?.status !== "sent") { setError("Die Test-E-Mail konnte nicht gesendet werden."); setEmailSettingsNotice(""); return; }
+      setEmailSettingsNotice("Test-E-Mail wurde gesendet.");
+    } finally { setEmailSettingsBusy(false); }
   };
 
   const startChoiceEditor = (item?: CustomChoice) => {
@@ -1713,11 +1874,11 @@ export function WortnahApp() {
           {["purpose","topic","detail"].includes(commStep) && <ChoiceGrid key={`communication-${commStep}-${purpose?.id ?? "root"}-${topic?.id ?? "root"}-${choiceCount}`} choices={currentChoices} lang={lang} selected={selected} speaking={speaking} onChoose={chooseCommunication} onVisibleChoicesChange={reportVisibleChoices} count={choiceCount} />}
           {commStep !== "success" && <button className="missing-topic-button" onClick={() => setShowMissingChoices((open) => !open)} aria-expanded={showMissingChoices}><CircleHelp />{t.missingTopic}</button>}
           {showMissingChoices && commStep !== "success" && <section className="missing-choice-panel" aria-label={t.whatMissing}><h2>{t.whatMissing}</h2><div>{missingChoices.map((item) => <button key={item.id} onClick={() => void reportMissing(item.id)}>{item[lang]}</button>)}</div></section>}
-          {status && view === "communicate" && <p className="inline-status">{status}</p>}
+          {status && view === "communicate" && commStep !== "success" && <p className="inline-status">{status}</p>}
           {commStep === "review" && detail && <section className="message-review"><div className="quote-mark">“</div><p>{detail[lang]}</p><div className="review-actions"><button onClick={() => speak(detail[lang])}><Volume2 />{t.listen}</button><button onClick={() => setCommStep("practice")}><Mic />{t.practice}</button><button onClick={() => setCommStep("detail")}><RotateCcw />{t.change}</button><button className="primary-button" onClick={() => setCommStep("priority")}><Send />{t.send}</button></div></section>}
           {commStep === "practice" && detail && <section className="practice-panel"><span className="practice-orb"><Headphones /></span><h2>{t.practiceTitle}</h2><p>{t.practiceHint}</p><blockquote>{detail[lang]}</blockquote><div className="practice-controls"><button onClick={() => speak(detail[lang])}><RotateCcw />{t.repeat}</button><button className="primary-button" onClick={() => setCommStep("priority")}><Check />{t.done}</button></div></section>}
-          {commStep === "priority" && detail && <section className="priority-panel"><div className="compact-message">{detail[lang]}</div><div className="priority-grid">{(["normal","important","very_important"] as Priority[]).map((item) => <button key={item} className={`priority-card ${item} ${priority === item ? "selected" : ""}`} onClick={() => setPriority(item)}><span />{item === "normal" ? t.normal : item === "important" ? t.important : t.veryImportant}{priority === item && <Check />}</button>)}</div>{error && <p className="form-error">{error}</p>}<button className="send-final" onClick={sendMessage}><Send />{t.sendNow}</button></section>}
-          {commStep === "success" && <section className="success-panel"><span className="success-check"><Check /></span><h1>{t.sent}</h1><p>{t.sentHint}</p><button className="primary-button" onClick={openHome}>{t.home}</button></section>}
+          {commStep === "priority" && detail && <section className="priority-panel"><div className="compact-message">{detail[lang]}</div><div className="priority-grid">{(["normal","important","very_important"] as Priority[]).map((item) => <button key={item} className={`priority-card ${item} ${priority === item ? "selected" : ""}`} onClick={() => setPriority(item)} disabled={messageSending}><span />{item === "normal" ? t.normal : item === "important" ? t.important : t.veryImportant}{priority === item && <Check />}</button>)}</div>{error && <p className="form-error">{error}</p>}<button className="send-final" onClick={sendMessage} disabled={messageSending}><Send />{messageSending ? "Wird gespeichert …" : t.sendNow}</button></section>}
+          {commStep === "success" && <section className="success-panel"><span className="success-check"><Check /></span><h1>{t.sent}</h1><p>{status || t.sentHint}</p><button className="primary-button" onClick={openHome}>{t.home}</button></section>}
         </div>
         {commStep !== "success" && <PatientBottomBar audioMode={audioMode} audioModeLabel={audioModeLabel} onBack={communicationBack} onRepeat={() => { void logInteraction("choice_repeat", `communicate_${commStep}`); const text = commStep === "review" || commStep === "practice" || commStep === "priority" ? detail?.[lang] : selected ? currentChoices.find((item) => item.id === selected)?.[lang] : currentChoices[0]?.[lang]; if (text) speak(text); }} onToggleAudio={() => { void logInteraction("audio_toggle", `communicate_${commStep}`); cycleAudioMode(); }} />}
       </main>
@@ -1734,7 +1895,7 @@ export function WortnahApp() {
   }
 
   if (view === "messages") return (
-    <main className="app-shell main-app" style={{ "--text-scale": textScale } as React.CSSProperties}>{shellHeader(t.messages, true)}<div className="content-wrap"><div className="page-heading"><h1>{t.messages}</h1><p>{lang === "de" ? "Ihre gesendeten Nachrichten und der Lesestatus." : "Your sent messages and read status."}</p></div><div className="message-list">{messages.length === 0 ? <div className="empty-state"><Bell /><h2>{t.noMessages}</h2></div> : messages.map((message) => <article className={`message-item ${message.priority}`} key={message.id}><div className="message-meta"><span>{message.priority === "normal" ? t.normal : message.priority === "important" ? t.important : t.veryImportant}</span><time>{new Intl.DateTimeFormat(lang === "de" ? "de-DE" : "en-GB", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }).format(new Date(message.sent_at))}</time></div><p>{lang === "de" ? message.body_de : message.body_en}</p><div className="delivery-state">{message.message_receipts?.length ? <><Check />{t.read}</> : <><Send />{t.delivery}</>}</div><div className="message-actions"><button onClick={() => speak(lang === "de" ? message.body_de ?? "" : message.body_en ?? "") }><Volume2 />{t.listen}</button><button onClick={() => { const reused = { id: "reuse", de: message.body_de ?? "", en: message.body_en ?? "" }; setPurpose(purposes[0]); setTopic(topicsByPurpose.tell[0]); setDetail(reused); setCommStep("review"); setView("communicate"); }}><RotateCcw />{lang === "de" ? "Wieder verwenden" : "Use again"}</button></div></article>)}</div></div></main>
+    <main className="app-shell main-app" style={{ "--text-scale": textScale } as React.CSSProperties}>{shellHeader(t.messages, true)}<div className="content-wrap"><div className="page-heading"><h1>{t.messages}</h1><p>{lang === "de" ? "Ihre gesendeten Nachrichten und der Lesestatus." : "Your sent messages and read status."}</p></div>{status && <p className="inline-status" role="status">{status}</p>}{error && <p className="form-error" role="alert">{error}</p>}<div className="message-list">{messages.length === 0 ? <div className="empty-state"><Bell /><h2>{t.noMessages}</h2></div> : messages.map((message) => <article className={`message-item ${message.priority}`} key={message.id}><div className="message-meta"><span>{message.priority === "normal" ? t.normal : message.priority === "important" ? t.important : t.veryImportant}</span><time>{new Intl.DateTimeFormat(lang === "de" ? "de-DE" : "en-GB", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }).format(new Date(message.sent_at))}</time></div><p>{lang === "de" ? message.body_de : message.body_en}</p><div className="delivery-state">{message.message_receipts?.length ? <><Check />{t.read}</> : <><Send />{t.delivery}</>}</div>{emailDeliveryLabel(message) && <div className="delivery-state email-delivery-state"><Send />{emailDeliveryLabel(message)}</div>}<div className="message-actions"><button onClick={() => speak(lang === "de" ? message.body_de ?? "" : message.body_en ?? "") }><Volume2 />{t.listen}</button><button onClick={() => { const reused = { id: "reuse", de: message.body_de ?? "", en: message.body_en ?? "" }; setPurpose(purposes[0]); setTopic(topicsByPurpose.tell[0]); setDetail(reused); setCommStep("review"); setView("communicate"); }}><RotateCcw />{lang === "de" ? "Wieder verwenden" : "Use again"}</button>{role === "companion" && message.email_notification_deliveries?.some((delivery) => delivery.status === "failed") && <button onClick={() => void retryEmailDelivery(message)} disabled={emailSettingsBusy}><Send />E-Mail erneut versuchen</button>}</div></article>)}</div></div></main>
   );
 
   if (view === "settings") {
@@ -1909,7 +2070,14 @@ export function WortnahApp() {
 
           {adminSection === "activity" && <section className="admin-panel activity-panel"><div className="panel-heading"><div><h2>{lang === "de" ? "Aktivitätsverlauf" : "Activity timeline"}</h2><p>{lang === "de" ? "Neueste Aktivität zuerst" : "Newest activity first"}</p></div><ClipboardCheck /></div><div className="activity-timeline">{activityEvents.length === 0 ? <p className="quiet-empty">{lang === "de" ? "Noch keine Aktivität erfasst." : "No activity recorded yet."}</p> : activityEvents.map((event) => <article key={event.id}><span className={`activity-dot ${event.event_type}`} /><div><strong>{activityLabel(event)}</strong><small>{event.screen_key ? event.screen_key.replaceAll("_", " ") : (lang === "de" ? "Wortnah" : "Wortnah")}</small></div><time>{new Intl.DateTimeFormat(lang === "de" ? "de-DE" : "en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(event.occurred_at))}</time></article>)}</div></section>}
 
-          {adminSection === "settings" && <section className="admin-panel admin-settings-panel"><div className="panel-heading"><div><h2>Maximale Auswahl</h2><p>Werner wählt selbst 2, 4, 6, 8, 10 oder 12 Felder – bis zu Ihrem Maximum.</p></div><Settings2 /></div><div className="maximum-choice-grid">{availablePatientChoiceCounts(DEFAULT_ADMIN_CHOICE_MAXIMUM).map((count) => <button key={count} className={adminChoiceMaximum === count ? "active" : ""} aria-pressed={adminChoiceMaximum === count} disabled={settingsBusy} onClick={() => void saveAdminChoiceMaximum(count)}><strong>{count}</strong><span>Felder</span></button>)}</div>{settingsBusy && <p className="settings-saving" role="status">Einstellung wird gespeichert …</p>}{editorNotice && <p className="editor-notice" role="status"><Check />{editorNotice}</p>}{error && <p className="form-error">{error}</p>}<div className="settings-note"><ShieldCheck /><p>Die Einstellung gilt gemeinsam für Kommunikation, Internetsuche und Üben. Werner kann seine eigene Zahl jederzeit in „Meine Einstellungen“ oder oben in der Leiste ändern.</p></div></section>}
+          {adminSection === "settings" && <div className="admin-settings-stack">
+            <section className="admin-panel admin-settings-panel"><div className="panel-heading"><div><h2>Maximale Auswahl</h2><p>Werner wählt selbst 2, 4, 6, 8, 10 oder 12 Felder – bis zu Ihrem Maximum.</p></div><Settings2 /></div><div className="maximum-choice-grid">{availablePatientChoiceCounts(DEFAULT_ADMIN_CHOICE_MAXIMUM).map((count) => <button key={count} className={adminChoiceMaximum === count ? "active" : ""} aria-pressed={adminChoiceMaximum === count} disabled={settingsBusy} onClick={() => void saveAdminChoiceMaximum(count)}><strong>{count}</strong><span>Felder</span></button>)}</div>{settingsBusy && <p className="settings-saving" role="status">Einstellung wird gespeichert …</p>}{editorNotice && <p className="editor-notice" role="status"><Check />{editorNotice}</p>}<div className="settings-note"><ShieldCheck /><p>Die Einstellung gilt gemeinsam für Kommunikation, Internetsuche und Üben. Werner kann seine eigene Zahl jederzeit in „Meine Einstellungen“ oder oben in der Leiste ändern.</p></div></section>
+            <section className="admin-panel admin-settings-panel email-settings-panel"><div className="panel-heading"><div><h2>E-Mail-Benachrichtigungen</h2><p>Nur wichtige und sehr wichtige Mitteilungen. Normale Mitteilungen werden nie per E-Mail gesendet.</p></div><Bell /></div>
+              <div className="email-recipient-form"><label><span>E-Mail-Adresse</span><input type="email" value={emailRecipientDraft} onChange={(event) => setEmailRecipientDraft(event.target.value)} placeholder="name@beispiel.de" disabled={emailSettingsBusy || emailRecipients.length >= 3} /></label><label className="consent-check"><input type="checkbox" checked={emailRecipientConsent} onChange={(event) => setEmailRecipientConsent(event.target.checked)} disabled={emailSettingsBusy || emailRecipients.length >= 3} /><span>Die empfangende Person hat dieser Benachrichtigung zugestimmt.</span></label><button className="primary-button" onClick={() => void addEmailRecipient()} disabled={emailSettingsBusy || emailRecipients.length >= 3}><Plus />Empfänger hinzufügen</button></div>
+              <div className="email-recipient-list">{emailRecipients.length === 0 ? <p className="quiet-empty">Noch keine E-Mail-Benachrichtigung eingeschaltet.</p> : emailRecipients.map((recipient) => <article key={recipient.id}><div><strong>{recipient.email}</strong><small>{recipient.enabled ? "Wichtig und sehr wichtig · Eingeschaltet" : "Ausgeschaltet"}</small></div><button className={`recipient-toggle ${recipient.enabled ? "on" : ""}`} onClick={() => void toggleEmailRecipient(recipient)} disabled={emailSettingsBusy} aria-pressed={recipient.enabled}>{recipient.enabled ? "Ein" : "Aus"}</button><button className="icon-action test-email-action" onClick={() => void sendEmailRecipientTest(recipient)} disabled={emailSettingsBusy || !recipient.enabled} aria-label={`Test-E-Mail an ${recipient.email} senden`}><Send /></button><button className="icon-action danger" onClick={() => void removeEmailRecipient(recipient)} disabled={emailSettingsBusy} aria-label={`${recipient.email} entfernen`}><Trash2 /></button></article>)}</div>
+              <div className="settings-note"><ShieldCheck /><p>Die Gmail-Zugangsdaten bleiben ausschließlich in Supabase. Gesendete, erneut versuchte und fehlgeschlagene Zustände werden für Begleitung protokolliert.</p></div>{emailSettingsNotice && <p className="editor-notice" role="status"><Check />{emailSettingsNotice}</p>}{error && <p className="form-error" role="alert">{error}</p>}
+            </section>
+          </div>}
         </div>
       </div>
     </main>

@@ -6,6 +6,7 @@ const functionFiles = [
   "../supabase/functions/pilot-login/index.ts",
   "../supabase/functions/wortnah-audio/index.ts",
   "../supabase/functions/wortnah-audio-import/index.ts",
+  "../supabase/functions/send-message-email-alerts/index.ts",
 ];
 
 test("every browser Edge Function accepts the public custom domain", async () => {

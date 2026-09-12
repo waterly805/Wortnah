@@ -303,3 +303,12 @@ Date: 11 September 2026
 - Found that the daily retention job archives messages after 90 days and purges only manually trashed messages after 30 days, so checkpoint 3 must implement the approved automatic 30-day message/receipt/delivery cleanup.
 - Confirmed persistent Gmail sender secret names exist only in Supabase, while the deployed version-14 email function is disconnected from the app, permits normal-priority forwarding, allows only an obsolete Site origin and logged repeated forwarding failures on 5–6 September.
 - Reconfirmed the Option B content contract and the immutable-path requirement. No secret value was read, no migration or deployment was performed, and no email was sent.
+
+## Batch 45: durable priority-email architecture
+
+- Added canonical migration source for the immutable German message path, companion-only recipient controls, duplicate-safe delivery outbox, seven-attempt leasing/retry state, deliberate Admin retry and active-space-only 30-day cleanup.
+- Added the canonical `send-message-email-alerts` function with current origins, server-side Option B composition, normal-priority exclusion, authenticated message/test/retry modes, private scheduled drain mode and safe provider outcomes.
+- Added Admin controls for up to three consented recipients, enable/disable, remove and privacy-safe test actions, plus message-level sent/retrying/failed proof and deliberate retry. Werner now saves first and receives a separate delivery result.
+- Passed lint, bounded production build and all 53 automated checks. The migration passed a full production-engine rollback validation before being applied.
+- Verified production contains the new message column, recipient/outbox tables, claim function and both cron schedules. Active-space counts remained one message, zero recipients and zero deliveries.
+- Deployed repository source as Edge Function version 15 with gateway JWT verification disabled and application-level authentication enforced. A no-key drain probe returned 401. No real email was sent; consented test and important-message acceptance remain.
