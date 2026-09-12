@@ -18,13 +18,13 @@ The Site audience is public as of 11 September 2026. Check it again before futur
 
 ## Verified baseline
 
-- Site version 6 is deployed successfully from GitHub/Sites source commit `3bc744f1eeb07c476daa6398404396bd60eee1a5` and the audience is public.
+- The current public Site includes the 12 September priority-email settings and delivery-status frontend. Exact source/release identifiers are recorded in Git and Sites deployment history.
 - `pilot-login` version 18 is active, performs custom authentication and returns the canonical Werner space before issuing the login token.
 - Choice limits accept exactly 2/4/6/8/10/12.
 - Admin 1 and Admin 2 labels are aligned across access profiles, profiles, and memberships.
 - 180 tier-zero reviewed audio registry rows exist in the active Werner space.
 - Those 180 rows have 180 matching private storage objects and zero missing paths.
-- The production build, lint and all 47 automated checks pass for the deployed 0.5.4 runtime source.
+- The production build, lint and all 53 automated checks pass for the deployed email-architecture runtime source.
 - The 0.5.5 checkpoint-2 read-only audit measured the database at approximately 20 MB. After the 12 September migration, the canonical active space still has one current message and no email recipient/delivery rows; 25 historical messages and the only configured recipient remain in a legacy space and are outside the 0.5.5 import/delete scope.
 - Gmail sender credential names are present as Supabase server-side secrets, so recurring delivery does not require browser login. No consented version-15 test or message delivery has yet been performed.
 - The new 02:40 active-space retention schedule deletes messages older than 30 days; cascades remove associated receipts and Wortnah delivery records. The legacy-space data remains untouched. The email worker schedule runs every two minutes.

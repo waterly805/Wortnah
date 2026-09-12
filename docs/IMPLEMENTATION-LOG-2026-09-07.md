@@ -311,4 +311,5 @@ Date: 11 September 2026
 - Added Admin controls for up to three consented recipients, enable/disable, remove and privacy-safe test actions, plus message-level sent/retrying/failed proof and deliberate retry. Werner now saves first and receives a separate delivery result.
 - Passed lint, bounded production build and all 53 automated checks. The migration passed a full production-engine rollback validation before being applied.
 - Verified production contains the new message column, recipient/outbox tables, claim function and both cron schedules. Active-space counts remained one message, zero recipients and zero deliveries.
-- Deployed repository source as Edge Function version 15 with gateway JWT verification disabled and application-level authentication enforced. A no-key drain probe returned 401. No real email was sent; consented test and important-message acceptance remain.
+- Deployed repository source as Edge Function version 15 with gateway JWT verification disabled and application-level authentication enforced. A no-key drain probe returned 401.
+- Published the verified email settings and delivery-status frontend to the existing public Wortnah Site. No real email was sent; consented test and important-message acceptance remain.

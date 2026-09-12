@@ -143,7 +143,7 @@ Exit condition: focused function tests pass and the deployed version matches rep
 
 ### 7. Add Admin email settings
 
-Result: frontend source and automated checks complete locally on 12 September 2026; Site publication and authenticated Admin acceptance remain.
+Result: frontend source, automated checks and Site publication complete on 12 September 2026; authenticated Admin acceptance remains.
 
 - Add/update/enable/disable/remove up to three recipients.
 - Send a privacy-safe test and show the result.
@@ -153,7 +153,7 @@ Exit condition: both Admin roles pass authorized CRUD tests and Werner cannot ac
 
 ### 8. Connect message and delivery results
 
-Result: frontend source and automated checks complete locally on 12 September 2026; authenticated live normal/important/failure acceptance remains.
+Result: frontend source, automated checks and Site publication complete on 12 September 2026; authenticated live normal/important/failure acceptance remains.
 
 - Save messages independently from email delivery.
 - Show compact overall delivery status and recipient-level details.

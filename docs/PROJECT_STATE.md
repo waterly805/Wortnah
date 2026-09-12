@@ -134,7 +134,7 @@ The repository is the canonical development record. A local clone is a working c
 
 ### RELEASE-0.5.5 — Admin inbox, priority email, actionable overview and improvement insights
 
-Status: In progress — checkpoints 1–3 and backend checkpoint 6 complete; checkpoint 7–8 frontend source is verified but not yet published
+Status: In progress — checkpoints 1–3 and email checkpoints 6–8 are deployed; consented live email acceptance and checkpoints 4–5/9 remain
 
 Goal:
 Give Admin 1 and Admin 2 a simple 30-day message inbox, reliable priority email, an actionable overview and privacy-safe evidence for improving Wortnah content and reliability.
@@ -161,10 +161,10 @@ Verification required:
 - [x] Live current-space schema, RLS, function revision, data volume and Supabase storage are audited without exposing protected values; see `docs/AUDIT-0.5.5-CHECKPOINT-2-2026-09-11.md`.
 - [ ] Focused tests cover retention, authorization, priority gating, duplicate prevention, failure independence, overview navigation, analytics privacy and recommendation thresholds. Email/retention coverage passes; overview/analytics work remains.
 - [x] Production build, lint and all 53 current automated checks pass for the email architecture source.
-- [ ] Migration/function and Site deployments reach verified terminal success and the authenticated live checklist passes.
+- [ ] Migration/function and Site deployments reach verified terminal success and the authenticated live checklist passes. Email infrastructure and Site publication succeeded; the consented send checks remain.
 
 Notes / decisions:
-- Work proceeds through the ten checkpoints in the implementation plan. The live database reconciliation and version-15 email worker are complete; publish and authenticated recipient/delivery acceptance remain.
+- Work proceeds through the ten checkpoints in the implementation plan. The live database reconciliation, version-15 email worker and email frontend are deployed; authenticated recipient/delivery acceptance remains.
 - Message/receipt/delivery content retention is 30 days. Detailed privacy-safe events are retained for 90 days and anonymous daily totals for 12 months, but analytics schema work may be reduced after the required Supabase size/growth review.
 - Historical messages from prior spaces are not needed for this release and will not be recovered, imported or deleted.
 - No AI service is used for recommendation logic, email formatting/sending or patient profiling.
@@ -247,7 +247,7 @@ Notes / decisions:
 
 ### FEATURE-003 — Priority email alerts with Admin recipients
 
-Status: In progress — database and version-15 worker are live; verified frontend source awaits Site publication and consented acceptance
+Status: In progress — database, version-15 worker and frontend are live; consented email acceptance remains
 
 Goal:
 Send a private, traceable Gmail alert when Werner confirms an important or very important message, using up to three recipients managed by Admin 1 or Admin 2.
@@ -281,7 +281,7 @@ Notes / decisions:
 - Gmail sender credentials remain only in Supabase Edge Function secrets. Recipient addresses are companion-only protected data.
 - Reference lock: preserve the current white/navy Wortnah system; use description-left/control-right settings rows, compact channel/status chips and a simple delivery list based on the reviewed Sunsama, Mercury and Zapier patterns.
 - 11 September checkpoint-2 audit: the live backend already has `email_notification_recipients`, `email_notification_deliveries` and active `send-message-email-alerts` version 14, but their canonical migration/function source is missing from this repository. The live function still permits normal-priority forwarding, only accepts an obsolete Site origin, is disconnected from the application and logged repeated forwarding failures on 5–6 September, so it must be replaced from reviewed repository source rather than extended blindly.
-- 12 September implementation: canonical migration and function source were added; production now has the duplicate-safe queue, seven-attempt retry worker, 30-day active-space retention schedule and function version 15. Admin recipient/test/delivery UI and Werner save-first delivery feedback pass locally. Next: commit/push, publish the exact frontend source, then run one explicitly confirmed consented test email and authenticated important-message acceptance.
+- 12 September implementation: canonical migration and function source were added; production now has the duplicate-safe queue, seven-attempt retry worker, 30-day active-space retention schedule and function version 15. Admin recipient/test/delivery UI and Werner save-first delivery feedback are published. Next: run one explicitly confirmed consented test email and authenticated important-message acceptance.
 
 ### RELEASE-0.5.1 — Authenticated live acceptance
 
